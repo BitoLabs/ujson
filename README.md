@@ -2,7 +2,7 @@ ujson
 =====
 
 *ujson* is a tiny C++ library used to read a [JSON](https://www.json.org/) format.
-Where `u` stands for µ (micro).
+Where `u` stands for µ (micro). Original repository: https://github.com/bitolabs/ujson.git
 
 Here is a brief example:
 
@@ -290,8 +290,8 @@ Error handling is done through exceptions:
       value.
     - `val_type` - the actual type of the value.
 
-The Err::what() method return a short message. To get more details
-that includes the line number and other attributes, call Err::get_err_str().
+The `Err::what()` method return a short message. To get more details
+that includes the line number and other attributes, call `Err::get_err_str()`.
 
 ### Rejecting unknown members
 
@@ -305,7 +305,7 @@ This how this should be handled:
   index), it is marked as 'used'. Meaning that the application
   expects such a value.
 * When the application finishes fetching all the values, it calls
-  Val::reject_unknown_members() on the root object. This will check
+  `Val::reject_unknown_members()` on the root object. This will check
   recursively if there's any named value that is left 'unused'.
   If so, it will raise the exception.
 * For this to work correctly, the application must interrogate every
