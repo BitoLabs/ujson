@@ -48,6 +48,9 @@ Summary of features
     - [Number range checking].
     - [Rejecting unknown members].
     - [Enumerations].
+* On error, `ujson` reports the corresponding line number. This is supported
+  for any error, even it happens after parsing, due to `ujson` remembers the line
+  number for any loaded value.
 * If a named value is absent, it can be optionally replaced by a default value provided by the
   application.
 
