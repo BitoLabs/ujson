@@ -114,8 +114,8 @@ Either function returns a `const ujson::Val&` which is the root value.
 The `Val` class represents a JSON value of any type.
 
 In majority of cases the a JSON's root value is an object.
-So we can cast it to `Obj` class by calling Val::as_obj()
-method. Should this value be of another type, as_obj()
+So we can cast it to `Obj` class by calling `Val::as_obj()`
+method. Should this value be of another type, `as_obj()`
 will raise `ErrBadType` exception. Check other `Val::as_*()`
 methods for different types.
 
