@@ -373,13 +373,13 @@ Unit tests
 
 Unit tests are in a separate repo: [ujson-test].
 
-[value life time]:           #markdown-header-value-life-time
-[number range checking]:     #markdown-header-number-range-checking
-[enumerations]:              #markdown-header-enumerations
-[error handling]:            #markdown-header-error-handling
-[rejecting unknown members]: #markdown-header-rejecting-unknown-members
-[UTF-16 code points]:        #markdown-header-unicode-code-points
-[in-place parsing]:          #markdown-header-in-place-parsing
+[value life time]:           #value-life-time
+[number range checking]:     #number-range-checking
+[enumerations]:              #enumerations
+[error handling]:            #error-handling
+[rejecting unknown members]: #rejecting-unknown-members
+[UTF-16 code points]:        #unicode-code-points
+[in-place parsing]:          #in-place-parsing
 [ujson.h]: ujson.h
 [ujson.cpp]: ujson.cpp
 [ujson-test]: ../../../ujson-test.git
