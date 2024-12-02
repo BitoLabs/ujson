@@ -37,17 +37,17 @@ Summary of features
   requiring additional documentation.
 * The input is always a memory buffer. To read a JSON file, the application must load the
   the file in the memory as a C string and provide it to `ujson`.
-* [In-place parsing](#in-place-parsing) allows referencing the string tokens directly
+* [In-place parsing] allows referencing the string tokens directly
   from the input buffer rather allocating each such token in the heap.
 * The input is in UTF-8 format. The string tokens can contain escape sequences with
-  [UTF-16 code points](#unicode-code-points).
+  [UTF-16 code points].
 * `//` comments are supported. Note that these are not part of the JSON standard.
 * Number values can be fetched as signed integers (32 or 64 bit) or as 64-bit float values.
-* Exceptions are used to handle the errors. See [error handling](#error-handling).
+* Exceptions are used to handle the errors. See [error handling].
 * Value validation is easy and doesn't require a JSON schema. See:
-    - [Number range checking](#number-range-checking).
-    - [Rejecting unknown members](#rejecting-unknown-members).
-    - [Enumerations](#enumerations).
+    - [Number range checking].
+    - [Rejecting unknown members].
+    - [Enumerations].
 * If a named value is absent, it can be optionally replaced by a default value provided by the
   application.
 
@@ -64,7 +64,7 @@ in a file, so the application must load the whole content into a buffer.
 The application can use various APIs to read from file, there `ujson`
 doesn't have a function to do that as to not impose a particular API.
 
-The input buffer must be zero-terminated in case [in-place parsing](#in-place-parsing)
+The input buffer must be zero-terminated in case [in-place parsing]
 will be used. Otherwise the application can provide the length of the buffer.
 
 Here is an example using C standard library:
@@ -106,14 +106,12 @@ This variable must be allocated until we finished with
 getting all the JSON values. We must not use any references
 to values after we deallocate the `Json` variable.
 
-Then we call `Json::parse()` or `Json::parse_in_place()`,
-see [in-place parsing](#in-place-parsing).
+Then we call `Json::parse()` or `Json::parse_in_place()`, see [in-place parsing].
 Note, in case of `Json::parse()` we can optionally provide
 the buffer length, so that it doesn't have to be zero-terminated.
 
-Either function returns a `const ujson::Val&` which is
-a the root value. The `Val` class represents a JSON
-value of any type.
+Either function returns a `const ujson::Val&` which is the root value.
+The `Val` class represents a JSON value of any type.
 
 In majority of cases the a JSON's root value is an object.
 So we can cast it to `Obj` class by calling Val::as_obj()
@@ -124,7 +122,7 @@ methods for different types.
 If we use the `parse()` method, the input buffer can be freed
 by the application immediately after the call. If we use
 `parse_in_place()`, we must keep the input buffer allocated
-as until we are done fetching JSON values.
+until we are done fetching JSON values.
 
 ~~~~~~~~cpp
 void main()
@@ -140,6 +138,7 @@ void main()
 #### 3) Fetch JSON values
 
 We can read values via following classes derived from `Val` class:
+
 * `Obj`: contains named values of any type. Use the get methods:
     - `get_xxx(name)`: where xxx is a value type such as `i32`, etc.
     - `get_member(name)`: provides a reference to a `Val` that can be cast
@@ -148,17 +147,17 @@ We can read values via following classes derived from `Val` class:
     - `get_xxx(idx)`: where xxx is a value type such as `i32`, etc.
     - `get_element(idx)`: provides a reference to a `Val` that can be cast
       to a particular type.
-* `Str`: use its get() method to get the pointer to a C string.
-* `F64`: use its get() methods to get a floating point value of a `double` type.
+* `Str`: use its `get()` method to get the pointer to a C string.
+* `F64`: use its `get()` methods to get a floating point value of a `double` type.
   Can be used on any numbers, integers or floating point.
-* `Int`: use its get() methods to get a int64_t value, or get_i32() to restrict values to
-  32-bit. Can be used only with integers.
-* `Bool`: use its get() method to obtain a value of a `bool` type.
+* `Int`: use its `get()` methods to get a int64_t value, or `get_i32()` to restrict
+  values to 32-bit. Can be used only with integers.
+* `Bool`: use its `get()` method to obtain a value of a `bool` type.
 
 A `null` value can be determined by verifying if `Val::get_type()` returns `vtNull`.
 
 Note that value references are valid until the `Json` instance is allocated. See
-more in [value life time](#value-life-time) section.
+more in [value life time] section.
 
 Below is an example of fetching JSON values:
 
@@ -199,6 +198,7 @@ void main()
 ### Value life time
 
 The `ujson` API provides references/pointers to objects such as:
+
 * `Val` derived classes. Provided for example by:
   - `Json::parse()` and `Json::parse_in_place()`
   - `Arr::get_element()`
@@ -214,14 +214,15 @@ The `ujson` API provides references/pointers to objects such as:
 
 These references are valid as long as the `Json` instance is allocated,
 and become invalid when any of the below occurs:
+
 * `Json` instance is deallocated.
 * `Json::parse[_in_place]()` is called again.
 * `Json::clear()` is called.
 
-If the [in-place parsing](#in-place-parsing) is used, then strings
-and names are valid until the application deallocates the input buffer,
-even `Json` instance is no longer allocated. However the references
-to `Val` classes are bound only to `Json` instance.
+If the [in-place parsing] is used, then strings and names are valid until
+the application deallocates the input buffer, even `Json` instance is no
+longer allocated. However the references to `Val` classes are bound only to
+`Json` instance.
 
 ### Number range checking
 
@@ -230,6 +231,7 @@ If the value is not in range, then `ErrBadIntRange` or `ErrBadF64Range`
 exception is thrown.
 
 Example of methods performing range checking:
+
 * `Int::get(lo, hi)`
 * `Int::get_i32()`
 * `Int::get_i32(lo, hi)`
@@ -251,6 +253,7 @@ The `get_i32()` methods implicitly check that the number fits in
 `Str` values can be restricted to a set that in the application
 corresponds to an enum. If the value is not in the set, `ErrBadEnum`
 is thrown. Example of enum methods:
+
 * `Str::get_enum_idx(str_set, len)`
 * `Str::get_enum(str_set, val_set)`
 * `Obj::get_str_enum_idx(name, str_set, len, required=true)`
@@ -270,6 +273,7 @@ Color color = obj.get_str_enum("foo",
 ### Error handling
 
 Error handling is done through exceptions:
+
 * `Err` is the base `ujson` exception. It holds the corresponding 
   `line` number in JSON text. Even if the error occurs after parsing,
   each `Val` instance remembers the corresponding line number where
@@ -301,6 +305,7 @@ of error handling, otherwise the JSON file may contain typos that
 will be silently ignored, leading to unexpected application behavior.
 
 This how this should be handled:
+
 * Each time the application interrogates a value (by name, or by
   index), it is marked as 'used'. Meaning that the application
   expects such a value.
@@ -368,6 +373,13 @@ Unit tests
 
 Unit tests are in a separate repo: [ujson-test].
 
+[value life time]:           #markdown-header-value-life-time
+[number range checking]:     #markdown-header-number-range-checking
+[enumerations]:              #markdown-header-enumerations
+[error handling]:            #markdown-header-error-handling
+[rejecting unknown members]: #markdown-header-rejecting-unknown-members
+[UTF-16 code points]:        #markdown-header-unicode-code-points
+[in-place parsing]:          #markdown-header-in-place-parsing
 [ujson.h]: ujson.h
 [ujson.cpp]: ujson.cpp
 [ujson-test]: ../../../ujson-test.git
