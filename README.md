@@ -2,7 +2,8 @@ ujson
 =====
 
 *ujson* is a tiny C++ library used to read a [JSON](https://www.json.org/) format.
-Where `u` stands for µ (micro). Original repository: https://github.com/bitolabs/ujson.git
+Where `u` stands for µ (micro). Original repository where the code is maintained is
+here: https://github.com/bitolabs/ujson.git
 
 Here is a brief example:
 
@@ -307,10 +308,10 @@ doesn't recognize the name of the value. This is a good practice
 of error handling, otherwise the JSON file may contain typos that
 will be silently ignored, leading to unexpected application behavior.
 
-This how this should be handled:
+This is how it should be handled:
 
 * Each time the application interrogates a value (by name, or by
-  index), it is marked as 'used'. Meaning that the application
+  index), it is marked by ujson as 'used'. Meaning that the application
   expects such a value.
 * When the application finishes fetching all the values, it calls
   `Val::reject_unknown_members()` on the root object. This will check
@@ -326,7 +327,7 @@ This how this should be handled:
   of this branch. This will mark all the children as 'used'.
 * Note that, even if the parent value is an `Arr` meaning that it
   contains un-named values which are not checked by `reject_unknown_members()`,
-  these could contain inside `Obj` objects with named values.
+  these array elements could contain inside some objects with named values.
 
 ### In-place parsing
 
