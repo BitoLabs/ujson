@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <utility>
+#include "string.h"
 
 namespace ujson {
 
@@ -193,6 +194,18 @@ private:
         return static_cast<Dict*>(m_data.list)->map;
     }
 };
+
+static void str_copy(char* dst, const char* src, size_t count)
+{
+    // We are not using strncpy() to avoid compiler warning.
+    // For eaxmple VC++ warning C4996 "This function or variable may be unsafe".
+    // We are not using the safe version strncpy_s() because it is not well supported.
+    while (count--) {
+        const char c = *src++;
+        *dst++ = c;
+        if (0 == c) break;
+    }
+}
 
 template<class T, uint32_t E>
 const T& val_cast(const Val* v)
@@ -853,9 +866,9 @@ static std::string type_to_str(ValType t)
     case vtBool: str = "bool";  break;
     case vtInt : str = "int";   break;
     case vtF64 : str = "float"; break;
-    case vtStr:  str = "str";   break;
-    case vtArr:  str = "arr";   break;
-    case vtObj:  str = "obj";   break;
+    case vtStr : str = "str";   break;
+    case vtArr : str = "arr";   break;
+    case vtObj : str = "obj";   break;
     default:
         return std::to_string(t);
     }
@@ -985,7 +998,7 @@ const Val& Json::parse(const char* str, size_t len)
         len = strlen(str);
     }
     m_buf = new char[len + 1];
-    strncpy_s(m_buf, len + 1, str, len);
+    str_copy(m_buf, str, len);
     m_buf[len] = 0;
     return parse_in_place(m_buf);
 }

@@ -3,6 +3,20 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
+1.0.3 (2025-04-04)
+==================
+
+### New features
+
+### Changes
+
+### Fixes
+
+* Fix an error when compiling with GCC due to strncpy_s().
+* Fix links to headings in README.md not working in GitHub.
+  Now these do not work in Bitbucket as Markdown format is
+  not compatible.
+
 1.0.2 (2024-12-02)
 ==================
 
