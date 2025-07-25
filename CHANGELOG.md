@@ -3,6 +3,17 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
+1.1.0 (IN PROGRESS)
+==================
+
+### New features
+
+* Add Obj::get_arr_opt(name), Obj::get_obj_opt(name).
+
+### Changes
+
+### Fixes
+
 1.0.3 (2025-04-04)
 ==================
 

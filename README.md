@@ -53,7 +53,7 @@ Summary of features
   for any error, even it happens after parsing, due to `ujson` remembers the line
   number for any loaded value.
 * If a named value is absent, it can be optionally replaced by a default value provided by the
-  application.
+  application. See [optional and default values].
 
 User Guide
 ----------
@@ -220,7 +220,7 @@ These references are valid as long as the `Json` instance is allocated,
 and become invalid when any of the below occurs:
 
 * `Json` instance is deallocated.
-* `Json::parse[_in_place]()` is called again.
+* `Json::parse()` or `parse_in_place()` is called again.
 * `Json::clear()` is called.
 
 If the [in-place parsing] is used, then strings and names are valid until
@@ -301,6 +301,33 @@ Error handling is done through exceptions:
 The `Err::what()` method return a short message. To get more details
 that includes the line number and other attributes, call `Err::get_err_str()`.
 
+### Optional and default values
+
+~~~~~~~~cpp
+const ujson::Obj& obj = ...
+
+// By default named members are required:
+//
+int32_t     n = obj.get_i32("n"); // will fail if "n" is absent
+std::string s = obj.get_str("s"); // will fail if "s" is absent
+const ujson::Obj& x = root.get_obj("x"); // will fail if "x" is absent
+
+// Handling an optional number:
+//
+int32_t n = obj.get_i32("n", 0, 100, 42); // will return 42 if "n" is absent
+                                          // note that (0, 100) is the range
+
+// Handling an optional string:
+//
+std::string s = obj.get_str("s", "default"); // will return "default" if "s" is absent
+
+// Handling an optional object:
+//
+if (const ujson::Obj* x = root.get_obj_opt("x")) {
+    std::string child = x->get_str("child");
+}
+~~~~~~~~
+
 ### Rejecting unknown members
 
 `ujson` can throw the `ErrUnknownMember` in case the application
@@ -377,13 +404,14 @@ Unit tests
 
 Unit tests are in a separate repo: [ujson-test].
 
-[value life time]:           #value-life-time
-[number range checking]:     #number-range-checking
-[enumerations]:              #enumerations
-[error handling]:            #error-handling
-[rejecting unknown members]: #rejecting-unknown-members
-[UTF-16 code points]:        #unicode-code-points
-[in-place parsing]:          #in-place-parsing
+[value life time]:             #value-life-time
+[number range checking]:       #number-range-checking
+[enumerations]:                #enumerations
+[error handling]:              #error-handling
+[optional and default values]: #optional-and-default-values
+[rejecting unknown members]:   #rejecting-unknown-members
+[UTF-16 code points]:          #unicode-code-points
+[in-place parsing]:            #in-place-parsing
 [ujson.h]: ujson.h
 [ujson.cpp]: ujson.cpp
 [ujson-test]: ../../../ujson-test.git

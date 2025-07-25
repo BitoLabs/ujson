@@ -180,7 +180,9 @@ public:
         return (i >= 0) ? val_set[i] : def;
     }
     const Arr& get_arr(const char* name) const;
+    const Arr* get_arr_opt(const char* name) const; // if optional arr is missing, return null
     const Obj& get_obj(const char* name) const;
+    const Obj* get_obj_opt(const char* name) const; // if optional obj is missing, return null
 protected:
     Obj() = default;
     Obj(const Obj&) = delete;

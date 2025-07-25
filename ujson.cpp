@@ -473,7 +473,7 @@ int32_t Obj::get_str_enum_idx(
     size_t len,
     bool required) const
 {
-    const ujson::Val* v = get_member(name, required);
+    const Val* v = get_member(name, required);
     if (nullptr == v) return -1;
     return v->as_str().get_enum_idx(str_set, len);
 }
@@ -483,9 +483,21 @@ const Arr& Obj::get_arr(const char* name) const
     return get_member(name)->as_arr();
 }
 
+const Arr* Obj::get_arr_opt(const char* name) const
+{
+    const Val* v = get_member(name, false);
+    return v ? &v->as_arr() : nullptr;
+}
+
 const Obj& Obj::get_obj(const char* name) const
 {
     return get_member(name)->as_obj();
+}
+
+const Obj* Obj::get_obj_opt(const char* name) const
+{
+    const Val* v = get_member(name, false);
+    return v ? &v->as_obj() : nullptr;
 }
 
 class Parser
