@@ -199,6 +199,7 @@ void main()
 }
 ~~~~~~~~
 
+<a name="a_lifetime"></a>
 ### Value life time
 
 The `ujson` API provides references/pointers to objects such as:
@@ -228,6 +229,7 @@ the application deallocates the input buffer, even `Json` instance is no
 longer allocated. However the references to `Val` classes are bound only to
 `Json` instance.
 
+<a name="a_range"></a>
 ### Number range checking
 
 When fetching number values, the application can specify a range.
@@ -252,6 +254,7 @@ If (`lo > hi`), then the range is ignored.
 The `get_i32()` methods implicitly check that the number fits in
 32-bit integer range.
 
+<a name="a_enums"></a>
 ### Enumerations
 
 `Str` values can be restricted to a set that in the application
@@ -274,6 +277,7 @@ Color color = obj.get_str_enum("foo",
     std::array{red, green, blue});
 ~~~~~~~~
 
+<a name="a_errors"></a>
 ### Error handling
 
 Error handling is done through exceptions:
@@ -301,6 +305,7 @@ Error handling is done through exceptions:
 The `Err::what()` method return a short message. To get more details
 that includes the line number and other attributes, call `Err::get_err_str()`.
 
+<a name="a_optional"></a>
 ### Optional and default values
 
 ~~~~~~~~cpp
@@ -328,6 +333,7 @@ if (const ujson::Obj* x = root.get_obj_opt("x")) {
 }
 ~~~~~~~~
 
+<a name="a_unknown"></a>
 ### Rejecting unknown members
 
 `ujson` can throw the `ErrUnknownMember` in case the application
@@ -356,6 +362,7 @@ This is how it should be handled:
   contains un-named values which are not checked by `reject_unknown_members()`,
   these array elements could contain inside some objects with named values.
 
+<a name="a_inplace"></a>
 ### In-place parsing
 
 When calling `Json::parse_in_place()`, the application provides a zero-terminated
@@ -381,6 +388,7 @@ doesn't need to be zero-terminated if the length is provided. In this case
 the library will allocate an internal zero-terminated copy for the whole input
 and will call `Json::parse_in_place()`.
 
+<a name="a_utf16"></a>
 ### Unicode code points
 
 It is possible to specify in strings escape sequence with UTF-16 code-points.
@@ -404,14 +412,14 @@ Unit tests
 
 Unit tests are in a separate repo: [ujson-test].
 
-[value life time]:             #value-life-time
-[number range checking]:       #number-range-checking
-[enumerations]:                #enumerations
-[error handling]:              #error-handling
-[optional and default values]: #optional-and-default-values
-[rejecting unknown members]:   #rejecting-unknown-members
-[UTF-16 code points]:          #unicode-code-points
-[in-place parsing]:            #in-place-parsing
+[value life time]:             #a_lifetime
+[number range checking]:       #a_range
+[enumerations]:                #a_enums
+[error handling]:              #a_errors
+[optional and default values]: #a_optional
+[rejecting unknown members]:   #a_unknown
+[UTF-16 code points]:          #a_utf16
+[in-place parsing]:            #a_inplace
 [ujson.h]: ujson.h
 [ujson.cpp]: ujson.cpp
 [ujson-test]: ../../../ujson-test.git
