@@ -88,6 +88,8 @@ public:
     int64_t get(int64_t lo, int64_t hi) const;
     int32_t get_i32() const; // checks if it fits in int32_t
     int32_t get_i32(int32_t lo, int32_t hi) const;
+    uint32_t get_u32() const; // checks if it fits in uint32_t
+    uint32_t get_u32(uint32_t lo, uint32_t hi) const;
 protected:
     Int() = default;
     Int(const Int&) = delete;
@@ -133,6 +135,7 @@ public:
     const Val& get_element(int32_t idx) const;
     bool get_bool(int32_t idx) const;
     int32_t get_i32(int32_t idx, int32_t lo = 0, int32_t hi = -1) const;
+    uint32_t get_u32(int32_t idx, uint32_t lo = 0, uint32_t hi = -1) const;
     int64_t get_i64(int32_t idx, int64_t lo = 0, int64_t hi = -1) const;
     double get_f64(int32_t idx, double lo = 0.0, double hi = -1.0) const;
     const char* get_str(int32_t idx) const;
@@ -153,8 +156,10 @@ public:
     const Val* get_member(const char* name, bool required=true) const;
     bool get_bool(const char* name, const bool* def = nullptr) const;
     bool get_bool(const char* name, bool def) const { return get_bool(name, &def); }
-    int32_t get_i32(const char* name, int32_t lo = 0,  int32_t hi = -1, const int32_t* def = nullptr) const;
+    int32_t get_i32(const char* name, int32_t lo = 0, int32_t hi = -1, const int32_t* def = nullptr) const;
     int32_t get_i32(const char* name, int32_t lo, int32_t hi, int32_t def) const { return get_i32(name, lo, hi, &def); }
+    uint32_t get_u32(const char* name, uint32_t lo = 0, uint32_t hi = -1, const uint32_t* def = nullptr) const;
+    uint32_t get_u32(const char* name, uint32_t lo, uint32_t hi, uint32_t def) const { return get_u32(name, lo, hi, &def); }
     int64_t get_i64(const char* name, int64_t lo = 0, int64_t hi = -1, const int64_t* def = nullptr) const;
     int64_t get_i64(const char* name, int64_t lo, int64_t hi, int64_t def) const { return get_i64(name, lo, hi, &def); }
     double get_f64(const char* name, double lo = 0.0, double hi = -1.0, const double* def = nullptr) const;

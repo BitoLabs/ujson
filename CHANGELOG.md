@@ -9,6 +9,7 @@ This project follows [Semantic Versioning](http://semver.org/).
 ### New features
 
 * Add Obj::get_arr_opt(name), Obj::get_obj_opt(name).
+* Add u32 support.
 
 ### Changes
 

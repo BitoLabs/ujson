@@ -340,6 +340,20 @@ int32_t Int::get_i32(int32_t lo, int32_t hi) const
     return static_cast<int32_t>(get(lo, hi));
 }
 
+uint32_t Int::get_u32() const
+{
+    return static_cast<uint32_t>(get(0, UINT32_MAX));
+}
+
+uint32_t Int::get_u32(uint32_t lo, uint32_t hi) const
+{
+    if (lo > hi) {
+        lo = 0;
+        hi = UINT32_MAX;
+    }
+    return static_cast<uint32_t>(get(lo, hi));
+}
+
 double F64::get() const noexcept
 {
     auto& impl = ValImpl::from(this);
@@ -389,6 +403,11 @@ bool Arr::get_bool(int32_t idx) const
 int32_t Arr::get_i32(int32_t idx, int32_t lo, int32_t hi) const
 {
     return get_element(idx).as_int().get_i32(lo, hi);
+}
+
+uint32_t Arr::get_u32(int32_t idx, uint32_t lo, uint32_t hi) const
+{
+    return get_element(idx).as_int().get_u32(lo, hi);
 }
 
 int64_t Arr::get_i64(int32_t idx, int64_t lo, int64_t hi) const
@@ -447,6 +466,12 @@ int32_t Obj::get_i32(const char* name, int32_t lo, int32_t hi, const int32_t* de
 {
     auto* v = get_member(name, nullptr == def);
     return v ? v->as_int().get_i32(lo, hi) : *def;
+}
+
+uint32_t Obj::get_u32(const char* name, uint32_t lo, uint32_t hi, const uint32_t* def) const
+{
+    auto* v = get_member(name, nullptr == def);
+    return v ? v->as_int().get_u32(lo, hi) : *def;
 }
 
 int64_t Obj::get_i64(const char* name, int64_t lo, int64_t hi, const int64_t* def) const
