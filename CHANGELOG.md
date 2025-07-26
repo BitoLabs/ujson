@@ -3,7 +3,7 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
-1.1.0 (IN PROGRESS)
+1.1.0 (2025-07-26)
 ==================
 
 ### New features
@@ -12,6 +12,8 @@ This project follows [Semantic Versioning](http://semver.org/).
 * Add u32 support.
 
 ### Changes
+
+* Change ErrBadEnum to improve the error message.
 
 ### Fixes
 

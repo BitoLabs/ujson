@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <array>
+#include <vector>
 
 namespace ujson {
 
@@ -254,7 +255,15 @@ struct ErrUnknownMember : ErrValue
 
 struct ErrBadEnum : ErrValue
 {
-    explicit ErrBadEnum(const Val& v) noexcept;
+    std::string bad_str;
+    std::vector<std::string> set;
+
+    explicit ErrBadEnum(
+        const Val& v,
+        const char* bad_str,
+        const char* const set[],
+        size_t set_len) noexcept;
+    std::string get_err_str() const override;
 };
 
 }; // namespace ujson

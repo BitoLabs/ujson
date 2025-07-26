@@ -380,7 +380,7 @@ int32_t Str::get_enum_idx(const char* const str_set[], size_t len) const
     for (size_t i = 0; i < len; i++) {
         if (strcmp(str, str_set[i]) == 0) return static_cast<int32_t>(i);
     }
-    throw ErrBadEnum(*this);
+    throw ErrBadEnum(*this, str, str_set, len);
 }
 
 int32_t Arr::get_len() const noexcept
@@ -935,9 +935,6 @@ std::string ErrValue::get_err_str() const
     else if (val_idx >= 0) {
         str += "  value index: " + std::to_string(val_idx) + '\n';
     }
-    if (val_type != vtNone) {
-        str += "  val_type: " + type_to_str(val_type) + '\n';
-    }
     return str;
 }
 
@@ -950,8 +947,11 @@ ErrBadType::ErrBadType(const Val& v, ValType expected) noexcept
 std::string ErrBadType::get_err_str() const
 {
     std::string str = ErrValue::get_err_str();
+    if (val_type != vtNone) {
+        str += "  value type: " + type_to_str(val_type) + '\n';
+    }
     if (expected_type != vtNone) {
-        str += "  expected_type: " + type_to_str(expected_type) + '\n';
+        str += "  expected type: " + type_to_str(expected_type) + '\n';
     }
     return str;
 }
@@ -1001,9 +1001,37 @@ ErrUnknownMember::ErrUnknownMember(const Val& v) noexcept
 {
 }
 
-ErrBadEnum::ErrBadEnum(const Val& v) noexcept
-    : ErrValue("unsupported value", v)
+ErrBadEnum::ErrBadEnum(
+    const Val& v,
+    const char* bad_str,
+    const char* const set[],
+    size_t set_len
+) noexcept
+    : ErrValue("value is not in allowed set", v)
 {
+    this->bad_str = bad_str;
+    for (size_t i = 0; i < set_len; i++) {
+        this->set.push_back(set[i]);
+    }
+}
+
+std::string ErrBadEnum::get_err_str() const
+{
+    std::string str = ErrValue::get_err_str();
+    str += "  bad value: " + bad_str + '\n';
+    if (set.size() > 0) {
+        str += "  allowed set: (";
+        bool first = true;
+        for (auto& s : set) {
+            if (!first) {
+                str += '|';
+            }
+            str += s;
+            first = false;
+        }
+        str += ")\n";
+    }
+    return str;
 }
 
 void Json::clear() noexcept

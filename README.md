@@ -43,7 +43,7 @@ Summary of features
 * The input is in UTF-8 format. The string tokens can contain escape sequences with
   [UTF-16 code points].
 * `//` comments are supported. Note that these are not part of the JSON standard.
-* Number values can be fetched as signed integers (32 or 64 bit) or as 64-bit float values.
+* Number values can be fetched as integers (32 or 64 bit) or as 64-bit float values.
 * Exceptions are used to handle the errors. See [error handling].
 * Value validation is easy and doesn't require a JSON schema. See:
     - [Number range checking].
