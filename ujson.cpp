@@ -549,14 +549,13 @@ private:
     ValImpl* parse_val(ArrImpl* parent)
     {
         skip_white_space();
-        if (auto v = parse_val_null(parent); v) { return v; }
-        if (auto v = parse_val_bool(parent); v) { return v; }
-        if (auto v = parse_val_num (parent); v) { return v; }
-        if (auto v = parse_val_str (parent); v) { return v; }
-        if (auto v = parse_val_arr (parent); v) { return v; }
-        if (auto v = parse_val_obj (parent); v) { return v; }
+        if (auto v = parse_val_null(parent)) { return v; }
+        if (auto v = parse_val_bool(parent)) { return v; }
+        if (auto v = parse_val_num (parent)) { return v; }
+        if (auto v = parse_val_str (parent)) { return v; }
+        if (auto v = parse_val_arr (parent)) { return v; }
+        if (auto v = parse_val_obj (parent)) { return v; }
         throw ErrSyntax("invalid syntax", m_line_count);
-        return nullptr;
     }
 
     void raise_bad_utf()

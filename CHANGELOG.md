@@ -3,6 +3,13 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
+1.1.1 (2025-10-02)
+==================
+
+### Fixes
+
+* Fix "unreachable code" compiler warning.
+
 1.1.0 (2025-07-26)
 ==================
 
@@ -15,14 +22,8 @@ This project follows [Semantic Versioning](http://semver.org/).
 
 * Change ErrBadEnum to improve the error message.
 
-### Fixes
-
 1.0.3 (2025-04-04)
 ==================
-
-### New features
-
-### Changes
 
 ### Fixes
 
@@ -34,20 +35,12 @@ This project follows [Semantic Versioning](http://semver.org/).
 1.0.2 (2024-12-02)
 ==================
 
-### New features
-
-### Changes
-
 ### Fixes
 
 * Make README.md compatible with BitBucket.
 
 1.0.1 (2024-11-29)
 ==================
-
-### New features
-
-### Changes
 
 ### Fixes
 
@@ -59,7 +52,3 @@ This project follows [Semantic Versioning](http://semver.org/).
 ### New features
 
 * First version
-
-### Changes
-
-### Fixes
