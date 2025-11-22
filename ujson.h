@@ -52,7 +52,7 @@ class Val
 {
 public:
     ValType get_type() const noexcept;
-    int32_t get_idx() const noexcept;
+    int32_t get_idx() const noexcept; // -1 if not an array element
     const char* get_name() const noexcept;
     int32_t get_line() const;
     bool is_num() const noexcept;
@@ -132,16 +132,18 @@ class Arr: public Val
 {
 public:
     static constexpr ValType type() { return vtArr; }
-    int32_t get_len() const noexcept;
-    const Val& get_element(int32_t idx) const;
-    bool get_bool(int32_t idx) const;
-    int32_t get_i32(int32_t idx, int32_t lo = 0, int32_t hi = -1) const;
-    uint32_t get_u32(int32_t idx, uint32_t lo = 0, uint32_t hi = -1) const;
-    int64_t get_i64(int32_t idx, int64_t lo = 0, int64_t hi = -1) const;
-    double get_f64(int32_t idx, double lo = 0.0, double hi = -1.0) const;
-    const char* get_str(int32_t idx) const;
-    const Arr& get_arr(int32_t idx) const;
-    const Obj& get_obj(int32_t idx) const;
+    size_t get_len() const noexcept;
+    const Arr& require_len(size_t len) const { return require_len(len, len); } //!!!
+    const Arr& require_len(size_t lo, size_t hi) const; //!!!
+    const Val& get_element(size_t idx) const;
+    bool get_bool(size_t idx) const;
+    int32_t get_i32(size_t idx, int32_t lo = 0, int32_t hi = -1) const;
+    uint32_t get_u32(size_t idx, uint32_t lo = 0, uint32_t hi = -1) const;
+    int64_t get_i64(size_t idx, int64_t lo = 0, int64_t hi = -1) const;
+    double get_f64(size_t idx, double lo = 0.0, double hi = -1.0) const;
+    const char* get_str(size_t idx) const;
+    const Arr& get_arr(size_t idx) const;
+    const Obj& get_obj(size_t idx) const;
 protected:
     Arr() = default;
     Arr(const Arr&) = delete;
@@ -153,7 +155,7 @@ class Obj: public Arr
 public:
     static constexpr ValType type() { return vtObj; }
     int32_t get_member_idx(const char* name, bool required=true) const; // -1 if not found
-    const char* get_member_name(int32_t idx) const;
+    const char* get_member_name(size_t idx) const;
     const Val* get_member(const char* name, bool required=true) const;
     bool get_bool(const char* name, const bool* def = nullptr) const;
     bool get_bool(const char* name, bool def) const { return get_bool(name, &def); }
@@ -186,9 +188,9 @@ public:
         return (i >= 0) ? val_set[i] : def;
     }
     const Arr& get_arr(const char* name) const;
-    const Arr* get_arr_opt(const char* name) const; // if optional arr is missing, return null
+    const Arr* get_arr_opt(const char* name) const; // if name is missing, return null
     const Obj& get_obj(const char* name) const;
-    const Obj* get_obj_opt(const char* name) const; // if optional obj is missing, return null
+    const Obj* get_obj_opt(const char* name) const; // if name is missing, return null
 protected:
     Obj() = default;
     Obj(const Obj&) = delete;
@@ -251,6 +253,15 @@ struct ErrMemberNotFound : ErrValue
 struct ErrUnknownMember : ErrValue
 {
     explicit ErrUnknownMember(const Val& v) noexcept;
+};
+
+struct ErrBadArrLen : ErrValue
+{
+    size_t lo;
+    size_t hi;
+
+    explicit ErrBadArrLen(const Val& v, size_t lo, size_t hi) noexcept;
+    std::string get_err_str() const override;
 };
 
 struct ErrBadEnum : ErrValue

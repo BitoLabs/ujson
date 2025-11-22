@@ -3,6 +3,13 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
+1.2.0 (IN PROGRESS)
+==================
+
+### Changes
+
+* Change Arr index and length type from int32_t to size_t.
+
 1.1.1 (2025-10-02)
 ==================
 

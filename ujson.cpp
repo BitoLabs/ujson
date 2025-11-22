@@ -129,17 +129,17 @@ public:
         return *reinterpret_cast<const ArrImpl*>(arr);
     }
 
-    int32_t get_len() const
+    size_t get_len() const
     {
-        return static_cast<int32_t>(m_data.list->values.size());
+        return m_data.list->values.size();
     }
 
-    const ValImpl& get_element(int32_t idx) const
+    const ValImpl& get_element(size_t idx) const
     {
         return m_data.list->values.at(idx);
     }
 
-    ValImpl& get_element(int32_t idx)
+    ValImpl& get_element(size_t idx)
     {
         return m_data.list->values.at(idx);
     }
@@ -174,9 +174,9 @@ public:
         return (iter != m.end()) ? iter->second : -1;
     }
 
-    bool add_member(const char* name, int32_t idx, ValImpl& v)
+    bool add_member(const char* name, size_t idx, ValImpl& v)
     {
-        const bool added = map().try_emplace(name, idx).second;
+        const bool added = map().try_emplace(name, static_cast<int32_t>(idx)).second;
         if (added) {
             v.m_name = name;
         }
@@ -275,7 +275,7 @@ static void do_reject_unknow_members(const ValImpl* v)
 {
     if (v->get_type() & (vtArr | vtObj)) {
         const ArrImpl& arr = *static_cast<const ArrImpl*>(v);
-        for (int32_t i = 0; i < arr.get_len(); i++) {
+        for (size_t i = 0; i < arr.get_len(); i++) {
             v = &arr.get_element(i);
             if (0 == (v->m_type & vtUsedBit) && (arr.get_type() & vtObj)) {
                 throw ErrUnknownMember(*v);
@@ -294,7 +294,7 @@ static void do_ignore_members(const ValImpl* v)
 {
     if (v->get_type() & (vtArr | vtObj)) {
         const ArrImpl& arr = *static_cast<const ArrImpl*>(v);
-        for (int32_t i = 0; i < arr.get_len(); i++) {
+        for (size_t i = 0; i < arr.get_len(); i++) {
             v = &arr.get_element(i);
             v->mark_as_used();
             do_ignore_members(v);
@@ -383,54 +383,54 @@ int32_t Str::get_enum_idx(const char* const str_set[], size_t len) const
     throw ErrBadEnum(*this, str, str_set, len);
 }
 
-int32_t Arr::get_len() const noexcept
+size_t Arr::get_len() const noexcept
 {
     return ArrImpl::from(this).get_len();
 }
 
-const Val& Arr::get_element(int32_t idx) const
+const Val& Arr::get_element(size_t idx) const
 {
     const ValImpl& v = ArrImpl::from(this).get_element(idx);
     v.mark_as_used();
     return v;
 }
 
-bool Arr::get_bool(int32_t idx) const
+bool Arr::get_bool(size_t idx) const
 {
     return get_element(idx).as_bool().get();
 }
 
-int32_t Arr::get_i32(int32_t idx, int32_t lo, int32_t hi) const
+int32_t Arr::get_i32(size_t idx, int32_t lo, int32_t hi) const
 {
     return get_element(idx).as_int().get_i32(lo, hi);
 }
 
-uint32_t Arr::get_u32(int32_t idx, uint32_t lo, uint32_t hi) const
+uint32_t Arr::get_u32(size_t idx, uint32_t lo, uint32_t hi) const
 {
     return get_element(idx).as_int().get_u32(lo, hi);
 }
 
-int64_t Arr::get_i64(int32_t idx, int64_t lo, int64_t hi) const
+int64_t Arr::get_i64(size_t idx, int64_t lo, int64_t hi) const
 {
     return get_element(idx).as_int().get(lo, hi);
 }
 
-double Arr::get_f64(int32_t idx, double lo, double hi) const
+double Arr::get_f64(size_t idx, double lo, double hi) const
 {
     return get_element(idx).as_f64().get(lo, hi);
 }
 
-const char* Arr::get_str(int32_t idx) const
+const char* Arr::get_str(size_t idx) const
 {
     return get_element(idx).as_str().get();
 }
 
-const Arr& Arr::get_arr(int32_t idx) const
+const Arr& Arr::get_arr(size_t idx) const
 {
     return get_element(idx).as_arr();
 }
 
-const Obj& Arr::get_obj(int32_t idx) const
+const Obj& Arr::get_obj(size_t idx) const
 {
     return get_element(idx).as_obj();
 }
@@ -445,7 +445,7 @@ int32_t Obj::get_member_idx(const char* name, bool required) const
     return idx;
 }
 
-const char* Obj::get_member_name(int32_t idx) const
+const char* Obj::get_member_name(size_t idx) const
 {
     return ObjImpl::from(this).get_element(idx).get_name();
 }
@@ -453,7 +453,7 @@ const char* Obj::get_member_name(int32_t idx) const
 const Val* Obj::get_member(const char* name, bool required) const
 {
     const int32_t idx = get_member_idx(name, required);
-    return (idx >= 0) ? &get_element(idx) : nullptr;
+    return (idx >= 0) ? &get_element(static_cast<size_t>(idx)) : nullptr;
 }
 
 bool Obj::get_bool(const char* name, const bool* def) const
@@ -589,7 +589,7 @@ private:
                 throw ErrSyntax("invalid object syntax: expected ':' after member name", m_line_count);
             }
             skip_white_space();
-            int32_t idx = obj->get_len();
+            size_t idx = obj->get_len();
             ValImpl* v = parse_val(obj);
             if (!obj->add_member(name, idx, *v)) {
                 throw ErrSyntax("invalid object syntax: duplicate member name", m_line_count);
@@ -998,6 +998,22 @@ ErrMemberNotFound::ErrMemberNotFound(const Obj& v, const char* name) noexcept
 ErrUnknownMember::ErrUnknownMember(const Val& v) noexcept
     : ErrValue("unknown member", v)
 {
+}
+
+ErrBadArrLen::ErrBadArrLen(const Val& v, size_t _lo, size_t _hi) noexcept
+    : ErrValue("bad array length", v),
+    lo(_lo),
+    hi(_hi)
+{
+}
+
+std::string ErrBadArrLen::get_err_str() const
+{
+    std::string str = ErrValue::get_err_str();
+    if (lo <= hi) {
+        str += "  expected array length: " + std::to_string(lo) + " ... " + std::to_string(hi) + '\n';
+    }
+    return str;
 }
 
 ErrBadEnum::ErrBadEnum(
