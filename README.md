@@ -47,13 +47,13 @@ Summary of features
 * Exceptions are used to handle the errors. See [error handling].
 * Value validation is easy and doesn't require a JSON schema. See:
     - [Number range checking].
+    - [Optional and default values].
+    - [Checking array length].
     - [Rejecting unknown members].
     - [Enumerations].
 * On error, `ujson` reports the corresponding line number. This is supported
   for any error, even it happens after parsing, due to `ujson` remembers the line
   number for any loaded value.
-* If a named value is absent, it can be optionally replaced by a default value provided by the
-  application. See [optional and default values].
 
 User Guide
 ----------
@@ -229,54 +229,6 @@ the application deallocates the input buffer, even `Json` instance is no
 longer allocated. However the references to `Val` classes are bound only to
 `Json` instance.
 
-<a name="a_range"></a>
-### Number range checking
-
-When fetching number values, the application can specify a range.
-If the value is not in range, then `ErrBadIntRange` or `ErrBadF64Range`
-exception is thrown.
-
-Example of methods performing range checking:
-
-* `Int::get(lo, hi)`
-* `Int::get_i32()`
-* `Int::get_i32(lo, hi)`
-* `F64::get(lo, hi)`
-* `Arr::get_i32(idx, lo, hi)`
-* `Arr::get_i64(idx, lo, hi)`
-* `Arr::get_f64(idx, lo, hi)`
-* `Obj::get_i32(name, lo, hi)`
-* `Obj::get_i64(name, lo, hi)`
-* `Obj::get_f64(name, lo, hi)`
-
-If (`lo > hi`), then the range is ignored.
-
-The `get_i32()` methods implicitly check that the number fits in
-32-bit integer range.
-
-<a name="a_enums"></a>
-### Enumerations
-
-`Str` values can be restricted to a set that in the application
-corresponds to an enum. If the value is not in the set, `ErrBadEnum`
-is thrown. Example of enum methods:
-
-* `Str::get_enum_idx(str_set, len)`
-* `Str::get_enum(str_set, val_set)`
-* `Obj::get_str_enum_idx(name, str_set, len, required=true)`
-* `Obj::get_str_enum(name, str_set, val_set[, def])`
-
-Example:
-
-~~~~~~~~cpp
-enum Color { red, green, blue };
-ujson::Json json;
-auto& obj = json.parse(R"({"foo": "green"})").as_obj();
-Color color = obj.get_str_enum("foo",
-    std::array{"red", "green", "blue"},
-    std::array{red, green, blue});
-~~~~~~~~
-
 <a name="a_errors"></a>
 ### Error handling
 
@@ -305,8 +257,58 @@ Error handling is done through exceptions:
 The `Err::what()` method return a short message. To get more details
 that includes the line number and other attributes, call `Err::get_err_str()`.
 
+### Value validation
+
+<a name="a_range"></a>
+#### Number range checking
+
+When fetching number values, the application can specify a range.
+If the value is not in range, then `ErrBadIntRange` or `ErrBadF64Range`
+exception is thrown.
+
+Example of methods performing range checking:
+
+* `Int::get(lo, hi)`
+* `Int::get_i32()`
+* `Int::get_i32(lo, hi)`
+* `F64::get(lo, hi)`
+* `Arr::get_i32(idx, lo, hi)`
+* `Arr::get_i64(idx, lo, hi)`
+* `Arr::get_f64(idx, lo, hi)`
+* `Obj::get_i32(name, lo, hi)`
+* `Obj::get_i64(name, lo, hi)`
+* `Obj::get_f64(name, lo, hi)`
+
+If (`lo > hi`), then the range is ignored.
+
+The `get_i32()` methods implicitly check that the number fits in
+32-bit integer range.
+
+<a name="a_enums"></a>
+#### Enumerations
+
+`Str` values can be restricted to a set that in the application
+corresponds to an enum. If the value is not in the set, `ErrBadEnum`
+is thrown. Example of enum methods:
+
+* `Str::get_enum_idx(str_set, len)`
+* `Str::get_enum(str_set, val_set)`
+* `Obj::get_str_enum_idx(name, str_set, len, required=true)`
+* `Obj::get_str_enum(name, str_set, val_set[, def])`
+
+Example:
+
+~~~~~~~~cpp
+enum Color { red, green, blue };
+ujson::Json json;
+auto& obj = json.parse(R"({"foo": "green"})").as_obj();
+Color color = obj.get_str_enum("foo",
+    std::array{"red", "green", "blue"},
+    std::array{red, green, blue});
+~~~~~~~~
+
 <a name="a_optional"></a>
-### Optional and default values
+#### Optional and default values
 
 ~~~~~~~~cpp
 const ujson::Obj& obj = ...
@@ -333,8 +335,33 @@ if (const ujson::Obj* x = root.get_obj_opt("x")) {
 }
 ~~~~~~~~
 
+<a name="a_require_len"></a>
+#### Checking array length
+
+By default an array `Arr` value can have any number of elements.
+However, if the application must limit the array length and reject
+it if it is not valid, then it can use the `Arr::requre_len()` method
+as follows:
+
+~~~~~~~~cpp
+ujson::Json json;
+
+// Limit the 'rgb' array to 3 elements, otherwise it will throw ErrBadArrLen.
+const ujson::Arr& rgb = json.parse("[0, 255, 0]").as_arr().require_len(3);
+...
+
+// Bound the 'samples' length to range (0, 16), otherwise it will throw ErrBadArrLen.
+const ujson::Arr& samples = json.parse("[0, 1, 2, 7]").as_arr().require_len(0, 16);
+...
+
+
+// The 'unlimted' array has no length limitation.
+const ujson::Arr& unlimited = json.parse("[0, 1, 2, 4, 5]").as_arr();
+...
+~~~~~~~~
+
 <a name="a_unknown"></a>
-### Rejecting unknown members
+#### Rejecting unknown members
 
 `ujson` can throw the `ErrUnknownMember` in case the application
 doesn't recognize the name of the value. This is a good practice
@@ -417,6 +444,7 @@ Unit tests are in a separate repo: [ujson-test].
 [enumerations]:                #a_enums
 [error handling]:              #a_errors
 [optional and default values]: #a_optional
+[checking array length]:       #a_require_len
 [rejecting unknown members]:   #a_unknown
 [UTF-16 code points]:          #a_utf16
 [in-place parsing]:            #a_inplace

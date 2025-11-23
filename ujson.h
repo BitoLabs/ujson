@@ -133,8 +133,8 @@ class Arr: public Val
 public:
     static constexpr ValType type() { return vtArr; }
     size_t get_len() const noexcept;
-    const Arr& require_len(size_t len) const { return require_len(len, len); } //!!!
-    const Arr& require_len(size_t lo, size_t hi) const; //!!!
+    const Arr& require_len(size_t len) const { return require_len(len, len); } // throws ErrBadArrLen
+    const Arr& require_len(size_t lo, size_t hi) const; // throws ErrBadArrLen
     const Val& get_element(size_t idx) const;
     bool get_bool(size_t idx) const;
     int32_t get_i32(size_t idx, int32_t lo = 0, int32_t hi = -1) const;

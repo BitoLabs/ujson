@@ -388,6 +388,15 @@ size_t Arr::get_len() const noexcept
     return ArrImpl::from(this).get_len();
 }
 
+const Arr& Arr::require_len(size_t lo, size_t hi) const
+{
+    const size_t len = get_len();
+    if (len < lo || len > hi) {
+        throw ErrBadArrLen(*this, lo, hi);
+    }
+    return *this;
+}
+
 const Val& Arr::get_element(size_t idx) const
 {
     const ValImpl& v = ArrImpl::from(this).get_element(idx);
