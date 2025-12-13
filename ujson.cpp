@@ -770,6 +770,7 @@ private:
             if ('\\' == c) {
                 switch (*(m_next++))
                 {
+                case '"':  c = '"' ; break;
                 case '\\': c = '\\'; break;
                 case '/':  c = '/' ; break;
                 case 'b':  c = '\b'; break;
