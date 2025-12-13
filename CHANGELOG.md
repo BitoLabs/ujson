@@ -3,6 +3,14 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
+1.2.1 (IN PROGRESS)
+==================
+
+### Fixes
+
+* Avoid crash due to stack overflow when the nested level of values
+  is too high. Raise ErrSyntax if nested level is 512 or higher.
+
 1.2.0 (2025-11-23)
 ==================
 

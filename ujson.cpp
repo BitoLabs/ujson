@@ -539,7 +539,8 @@ class Parser
 public:
     Parser(char* str) :
         m_next{ str },
-        m_line_count{ 1 }
+        m_line_count{ 1 },
+        m_nested_level{ 0 }
     {
     }
 
@@ -557,14 +558,23 @@ private:
     
     ValImpl* parse_val(ArrImpl* parent)
     {
+        const uint32_t max_nested_level = 512u;
+        if (++m_nested_level > max_nested_level) {
+            throw ErrSyntax("too many nested values", m_line_count);
+        }
         skip_white_space();
-        if (auto v = parse_val_null(parent)) { return v; }
-        if (auto v = parse_val_bool(parent)) { return v; }
-        if (auto v = parse_val_num (parent)) { return v; }
-        if (auto v = parse_val_str (parent)) { return v; }
-        if (auto v = parse_val_arr (parent)) { return v; }
-        if (auto v = parse_val_obj (parent)) { return v; }
-        throw ErrSyntax("invalid syntax", m_line_count);
+        ValImpl* v = nullptr;
+        while (true) {
+            if ((v = parse_val_null(parent)) != nullptr) break;
+            if ((v = parse_val_bool(parent)) != nullptr) break;
+            if ((v = parse_val_num (parent)) != nullptr) break;
+            if ((v = parse_val_str (parent)) != nullptr) break;
+            if ((v = parse_val_arr (parent)) != nullptr) break;
+            if ((v = parse_val_obj (parent)) != nullptr) break;
+            throw ErrSyntax("invalid syntax", m_line_count);
+        }
+        m_nested_level--;
+        return v;
     }
 
     void raise_bad_utf()
@@ -892,8 +902,9 @@ private:
     }
 
 private:
-    char*   m_next;
-    int32_t m_line_count;
+    char*    m_next;
+    int32_t  m_line_count;
+    uint32_t m_nested_level;
 };
 
 Err::Err(const char* msg, int32_t line_no) noexcept
