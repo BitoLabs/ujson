@@ -11,6 +11,8 @@ This project follows [Semantic Versioning](http://semver.org/).
 * Avoid crash due to stack overflow when the nested level of values
   is too high. Raise ErrSyntax if nested level is 512 or higher.
 * Fix string parsing when \" escape was present.
+* Fix string parsing when character code is greater than 0x7F. Basically
+  parsing failed for all unescaped non-ASCII characters.
 
 1.2.0 (2025-11-23)
 ==================

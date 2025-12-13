@@ -759,7 +759,7 @@ private:
         char* str_end = m_next;
         str = m_next;
         while (true) {
-            char c = *m_next++;
+            uint8_t c = static_cast<uint8_t>(*m_next++);
             if ('"' == c) break;
             if (c == '\r' || c == '\n' || c == 0) {
                 throw ErrSyntax("invalid string syntax: line ending before closing quotes", m_line_count);
