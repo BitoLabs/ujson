@@ -537,12 +537,18 @@ const Obj* Obj::get_obj_opt(const char* name) const
 class Parser
 {
 public:
-    Parser(char* str, uint32_t options) :
+    Parser(char* str, size_t len, uint32_t options) :
         m_next{ str },
         m_line_count{ 1 },
         m_nested_level{ 0 },
         m_options{options}
     {
+        if (0 == len) {
+            len = strlen(str);
+            m_end = str + len;
+        }
+        m_end = str + len;
+        str[len] = 0;
     }
 
     ValImpl* parse()
@@ -550,7 +556,7 @@ public:
         ValImpl* v = parse_val(nullptr);
         skip_white_space();
         if (0 != *m_next) {
-            throw ErrSyntax("invalid value syntax", m_line_count);
+            throw ErrSyntax("invalid syntax at the end of json", m_line_count);
         }
         return v;
     }
@@ -764,7 +770,7 @@ private:
         while (true) {
             uint8_t c = static_cast<uint8_t>(*m_next++);
             if ('"' == c) break;
-            if (c == '\r' || c == '\n' || c == 0) {
+            if (c == '\r' || c == '\n' || m_next == m_end) {
                 throw ErrSyntax("invalid string syntax: line ending before closing quotes", m_line_count);
             }
             if (c < ' ') {
@@ -883,6 +889,9 @@ private:
             }
             break;
         }
+        if (0 == *m_next && m_next != m_end) {
+            throw ErrSyntax("null character not allowed here", m_line_count);
+        }
     }
 
     void skip_to_eol()
@@ -906,6 +915,7 @@ private:
     }
 
 private:
+    char*    m_end;
     char*    m_next;
     int32_t  m_line_count;
     uint32_t m_nested_level;
@@ -1104,14 +1114,13 @@ const Val& Json::parse(const char* str, size_t len, uint32_t options)
     }
     m_buf = new char[len + 1];
     str_copy(m_buf, str, len);
-    m_buf[len] = 0;
-    return parse_in_place(m_buf, options);
+    return parse_in_place(m_buf, len, options);
 }
 
-const Val& Json::parse_in_place(char* str, uint32_t options)
+const Val& Json::parse_in_place(char* str, size_t len, uint32_t options)
 {
     free_root();
-    Parser p(str, options);
+    Parser p(str, len, options);
     m_root = p.parse();
     return *m_root;
 }

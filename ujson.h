@@ -54,8 +54,8 @@ public:
     ~Json() noexcept { clear(); }
     Json& operator = (const Json&) = delete;
     Json& operator = (Json&&) = delete;
-    const Val& parse(const char* str, size_t len = 0, uint32_t options = optDefault); // str must be zero-terminated if len=0
-    const Val& parse_in_place(char* str, uint32_t options = optDefault); // str must be zero-terminated and allocated until Json instance is destroyed
+    const Val& parse(const char* str, size_t len = 0, uint32_t options = optDefault); // str must be zero-terminated only if len=0. len does not include terminal zero
+    const Val& parse_in_place(char* str, size_t len = 0, uint32_t options = optDefault); // str must be zero-terminated and allocated until Json instance is destroyed. len does not include terminal zero
     void clear() noexcept;
 private:
     void free_root() noexcept;

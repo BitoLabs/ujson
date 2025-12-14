@@ -17,6 +17,11 @@ This project follows [Semantic Versioning](http://semver.org/).
     this can be switched off. Apparently standard JSON allows (but
     not recommends) duplicates, see https://datatracker.ietf.org/doc/html/rfc8259#section-4
 
+### Changes
+
+* Raise ErrSyntax if a null character is found before the text ends,
+  when the length of input is passed explicitly to parse() method.
+
 ### Fixes
 
 * Avoid crash due to stack overflow when the nested level of values
