@@ -16,6 +16,9 @@ This project follows [Semantic Versioning](http://semver.org/).
     within the object. This is how ujson behaved before, but now
     this can be switched off. Apparently standard JSON allows (but
     not recommends) duplicates, see https://datatracker.ietf.org/doc/html/rfc8259#section-4
+  - optTrailingComma (default): allow one trailing comma in arrays
+    and objects, like [1,2,]. This is how ujson behaved before, but
+    now this can be switched off.
 
 ### Changes
 

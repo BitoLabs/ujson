@@ -603,9 +603,9 @@ private:
         ObjImpl* obj = nullptr;
         if (!skip_text("{")) return obj;
         obj = &add_val(parent)->init_obj();
+        skip_white_space();
+        if (skip_text("}")) return obj;
         while (true) {
-            skip_white_space();
-            if (skip_text("}")) break;
             const char* name = parse_str();
             if (nullptr == name) {
                 throw ErrSyntax("invalid object syntax: expected member name or '}'", m_line_count);
@@ -627,6 +627,8 @@ private:
             if (!skip_text(",")) {
                 throw ErrSyntax("invalid object syntax: expected ',' or '}'", m_line_count);
             }
+            skip_white_space();
+            if ((m_options & optTrailingComma) && skip_text("}")) break;
         }
         return obj;
     }
@@ -636,15 +638,17 @@ private:
         ArrImpl* arr = nullptr;
         if (!skip_text("[")) return arr;
         arr = &add_val(parent)->init_arr();
+        skip_white_space();
+        if (skip_text("]")) return arr;
         while (true) {
-            skip_white_space();
-            if (skip_text("]")) break;
             std::ignore = parse_val(arr);
             skip_white_space();
             if (skip_text("]")) break;
             if (!skip_text(",")) {
                 throw ErrSyntax("invalid array syntax: expected ',' or ']'", m_line_count);
             }
+            skip_white_space();
+            if ((m_options & optTrailingComma) && skip_text("]")) break;
         }
         return arr;
     }
