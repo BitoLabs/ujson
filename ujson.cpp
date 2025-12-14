@@ -887,7 +887,8 @@ private:
                 skip_to_eol();
                 continue;
             }
-            if ('/' == m_next[0] && '/' == m_next[1]) {
+            if ((m_options & optLineCommentC) && '/' == m_next[0] && '/' == m_next[1]) {
+                // C-style line comments '//'
                 skip_to_eol();
                 continue;
             }

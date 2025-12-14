@@ -19,6 +19,8 @@ This project follows [Semantic Versioning](http://semver.org/).
   - optTrailingComma (default): allow one trailing comma in arrays
     and objects, like [1,2,]. This is how ujson behaved before, but
     now this can be switched off.
+  - optLineCommentC (default): allow // comments. This is how ujson
+    behaved before, but now this can be switched off.
 
 ### Changes
 
