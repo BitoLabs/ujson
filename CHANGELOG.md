@@ -3,16 +3,30 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
-1.2.1 (IN PROGRESS)
+1.3.0 (IN PROGRESS)
 ==================
+
+### New features
+
+* Added parsing options (see ujson::Options). Now the caller
+  can specify these options when calling parse() method. Following
+  options are implemented:
+
+  - optUniqueMembers (default): disallow duplicate member names
+    within the object. This is how ujson behaved before, but now
+    this can be switched off. Apparently standard JSON allows (but
+    not recommends) duplicates, see https://datatracker.ietf.org/doc/html/rfc8259#section-4
 
 ### Fixes
 
 * Avoid crash due to stack overflow when the nested level of values
   is too high. Raise ErrSyntax if nested level is 512 or higher.
+  This issue was caught thanks to https://github.com/nst/JSONTestSuite
 * Fix string parsing when \" escape was present.
+  This issue was caught thanks to https://github.com/nst/JSONTestSuite
 * Fix string parsing when character code is greater than 0x7F. Basically
   parsing failed for all unescaped non-ASCII characters.
+  This issue was caught thanks to https://github.com/nst/JSONTestSuite
 
 1.2.0 (2025-11-23)
 ==================

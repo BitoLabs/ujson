@@ -8,7 +8,7 @@
 
 namespace ujson {
 
-enum ValType: uint32_t
+enum ValType : uint32_t
 {
     vtNone = 0,
     vtNull = 1 << 0,
@@ -28,6 +28,23 @@ class Str;
 class Arr;
 class Obj;
 
+enum Options : uint32_t // Parse options
+{
+    optUniqueMembers    = 1 << 0, // Member names must be unique within the object.
+                                  // On duplicates throw ErrSyntax.
+                                  // If not set, duplicates are accepted, but only
+                                  // the first value can be accessed by name, while other
+                                  // values can be accessed only by index.
+
+    optTrailingComma    = 1 << 1, // One comma allowed after the last array element or object member.
+                                  // Example: { "a": [1, 2, ], "b": 42, }
+
+    optLineCommentC     = 1 << 2, // C style single line comment: //
+
+    optStandard         = 0,      // Conforms to JSON standard, no extra features are allowed.
+    optDefault          = optUniqueMembers | optTrailingComma | optLineCommentC,
+};
+
 class Json
 {
 public:
@@ -37,8 +54,8 @@ public:
     ~Json() noexcept { clear(); }
     Json& operator = (const Json&) = delete;
     Json& operator = (Json&&) = delete;
-    const Val& parse(const char* str, size_t len = 0); // str must be zero-terminated if len=0
-    const Val& parse_in_place(char* str); // str must be zero-terminated and allocated until Json instance is destroyed
+    const Val& parse(const char* str, size_t len = 0, uint32_t options = optDefault); // str must be zero-terminated if len=0
+    const Val& parse_in_place(char* str, uint32_t options = optDefault); // str must be zero-terminated and allocated until Json instance is destroyed
     void clear() noexcept;
 private:
     void free_root() noexcept;

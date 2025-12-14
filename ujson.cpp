@@ -537,10 +537,11 @@ const Obj* Obj::get_obj_opt(const char* name) const
 class Parser
 {
 public:
-    Parser(char* str) :
+    Parser(char* str, uint32_t options) :
         m_next{ str },
         m_line_count{ 1 },
-        m_nested_level{ 0 }
+        m_nested_level{ 0 },
+        m_options{options}
     {
     }
 
@@ -611,7 +612,9 @@ private:
             size_t idx = obj->get_len();
             ValImpl* v = parse_val(obj);
             if (!obj->add_member(name, idx, *v)) {
-                throw ErrSyntax("invalid object syntax: duplicate member name", m_line_count);
+                if (m_options & optUniqueMembers) {
+                    throw ErrSyntax("invalid object syntax: duplicate member name", m_line_count);
+                }
             }
             skip_white_space();
             if (skip_text("}")) break;
@@ -906,6 +909,7 @@ private:
     char*    m_next;
     int32_t  m_line_count;
     uint32_t m_nested_level;
+    uint32_t m_options;
 };
 
 Err::Err(const char* msg, int32_t line_no) noexcept
@@ -1092,7 +1096,7 @@ void Json::free_buf() noexcept
     m_buf = nullptr;
 }
 
-const Val& Json::parse(const char* str, size_t len)
+const Val& Json::parse(const char* str, size_t len, uint32_t options)
 {
     clear();
     if (0 == len) {
@@ -1101,13 +1105,13 @@ const Val& Json::parse(const char* str, size_t len)
     m_buf = new char[len + 1];
     str_copy(m_buf, str, len);
     m_buf[len] = 0;
-    return parse_in_place(m_buf);
+    return parse_in_place(m_buf, options);
 }
 
-const Val& Json::parse_in_place(char* str)
+const Val& Json::parse_in_place(char* str, uint32_t options)
 {
     free_root();
-    Parser p(str);
+    Parser p(str, options);
     m_root = p.parse();
     return *m_root;
 }

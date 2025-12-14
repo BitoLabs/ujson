@@ -33,7 +33,7 @@ Summary of features
 * Requires C++17 or later. No other dependency.
 * Just two files: [ujson.h], [ujson.cpp]. The tests are in a separate [ujson-test]
   repo, so no junk is included in the project that uses `ujson`.
-* Compatible with JSON specifaction [RFC7159] and [ECMA-404].
+* Compatible with JSON specifaction [RFC8259] and [ECMA-404].
 * The API in [ujson.h] is simple, easy to read and self-explanatory, rarely
   requiring additional documentation.
 * The input is always a memory buffer. To read a JSON file, the application must load the
@@ -451,5 +451,5 @@ Unit tests are in a separate repo: [ujson-test].
 [ujson.h]: ujson.h
 [ujson.cpp]: ujson.cpp
 [ujson-test]: ../../../ujson-test.git
-[RFC7159]: https://tools.ietf.org/html/rfc7159
+[RFC8259]: https://tools.ietf.org/html/rfc8259
 [ECMA-404]: https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf
