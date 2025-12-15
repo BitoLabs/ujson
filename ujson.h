@@ -39,10 +39,13 @@ enum Options : uint32_t // Parse options
     optTrailingComma    = 1 << 1, // One comma allowed after the last array element or object member.
                                   // Example: { "a": [1, 2, ], "b": 42, }
 
-    optLineCommentC     = 1 << 2, // C style single line comment: //
+    optEmptyFraction    = 1 << 2, // Allow floating point numbers with no digits after decimal point.
+                                  // Example: [0., -1., 2.e10]
+
+    optLineCommentC     = 1 << 3, // C style single line comment: //
 
     optStandard         = 0,      // Conforms to JSON standard, no extra features are allowed.
-    optDefault          = optUniqueMembers | optTrailingComma | optLineCommentC,
+    optDefault          = optUniqueMembers | optTrailingComma | optEmptyFraction | optLineCommentC,
 };
 
 class Json

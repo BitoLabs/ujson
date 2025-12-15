@@ -702,7 +702,11 @@ private:
         if ('.' == *p) {
             is_float = true;
             p += 1;
+            char* const s = p;
             while (*p >= '0' && *p <= '9') p += 1;
+            if (s == p && !(m_options & optEmptyFraction)) {
+                throw ErrSyntax("invalid number syntax: no digits after '.'", m_line_count);
+            }
         }
         if ('E' == *p || 'e' == *p) {
             is_float = true;
