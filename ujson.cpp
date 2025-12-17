@@ -714,7 +714,39 @@ private:
             if ('+' == *p || '-' == *p) p += 1;
             while (*p >= '0' && *p <= '9') p += 1;
         }
-        if (!is_float) {
+        bool isHex = (m_options & optHex)
+            && ('0' == *num_start && p)
+            && (p - num_start == 1)
+            && (*p == 'x' || *p == 'X');
+        if (isHex) {
+            p += 1;
+            int64_t n = 0;
+            while (true) {
+                char c = *p;
+                if (c >= '0' && c <= '9') {
+                    c -= '0';
+                }
+                else if (c >= 'A' && c <= 'F') {
+                    c -= 'A' - 10;
+                }
+                else if (c >= 'a' && c <= 'f') {
+                    c -= 'a' - 10;
+                }
+                else {
+                    break;
+                }
+                if (n & (uint64_t(0xF) << 60)) {
+                    throw ErrSyntax("invalid number syntax: hex number doesn't fit in 64 bits", m_line_count);
+                }
+                n <<= 4;
+                n += c;
+                p += 1;
+            }
+            if (negative) n = -n;
+            v = add_val(parent);
+            v->init_int(n);
+        }
+        else if (!is_float) {
             // If integer exceeds -9223372036854775808 ... 9223372036854775807
             // we should raise an error as it will not fit in 64 bits.
             // Note this could be implemented via strtoll() and checking errno for ERANGE.

@@ -8,20 +8,20 @@ This project follows [Semantic Versioning](http://semver.org/).
 
 ### New features
 
-* Added parsing options (see ujson::Options). Now the caller
-  can specify these options when calling parse() method.
-  Before these options were added, ujson behaved like these are
-  turned on by default. However JSON standard doesn't allow this
-  behavior, so now this can be turned off.
+* New optHex option (OFF by default). It allows integers in hex
+  format (like: 0x1A, 0X2b).
+* Added parsing options that are ON by default.
+  Previous version supported these features, but these could not
+  be turned off. Note that JSON standard doesn't allow these:
 
-  - optUniqueMembers (default): disallow duplicate member names
-    within the object. Apparently standard JSON allows (but
-    not recommends) duplicates, see https://datatracker.ietf.org/doc/html/rfc8259#section-4
-  - optTrailingComma (default): allow one trailing comma in arrays
-    and objects, like [1,2,].
-  - optEmptyFraction (default): Allow floating point numbers with no
-    digits after decimal point (like 1. or 2.e3).
-  - optLineCommentC (default): allow // comments.
+  - optUniqueMembers: disallow duplicate member names within the
+    object. Apparently standard JSON allows (but not recommends)
+    duplicates, see https://datatracker.ietf.org/doc/html/rfc8259#section-4
+  - optTrailingComma: allow one trailing comma in arrays and objects,
+    like [1,2,].
+  - optEmptyFraction: Allow floating point numbers with no digits after
+    decimal point (like 1. or 2.e3).
+  - optLineCommentC: allow // comments.
 
 ### Changes
 

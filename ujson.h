@@ -44,6 +44,8 @@ enum Options : uint32_t // Parse options
 
     optLineCommentC     = 1 << 3, // C style single line comment: //
 
+    optHex              = 1 << 6, // Allow integers in hex format like: 0x1A, 0X2b
+
     optStandard         = 0,      // Conforms to JSON standard, no extra features are allowed.
     optDefault          = optUniqueMembers | optTrailingComma | optEmptyFraction | optLineCommentC,
 };
