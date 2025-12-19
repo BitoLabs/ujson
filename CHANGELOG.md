@@ -3,25 +3,30 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
-1.3.0 (IN PROGRESS)
+1.3.0 (2025-12-19)
 ==================
 
 ### New features
 
-* New optHex option (OFF by default). It allows integers in hex
-  format (like: 0x1A, 0X2b).
+* The `Json::parse()` and `parse_in_place()` methods now have
+  an additional `options` parameter, which can turn ON/OFF
+  additional syntax that is not present in JSON standard.
+* New `optHex` parsing option (OFF by default). It allows integers
+  in hex format (like: 0x1A, 0X2b).
+* New `optIdentifiers` parsing option (OFF by default). It allows
+  object member names as C identifiers without quotes: {foo: "bar"}.
 * Added parsing options that are ON by default.
   Previous version supported these features, but these could not
   be turned off. Note that JSON standard doesn't allow these:
 
-  - optUniqueMembers: disallow duplicate member names within the
+  - `optUniqueMembers`: disallow duplicate member names within the
     object. Apparently standard JSON allows (but not recommends)
     duplicates, see https://datatracker.ietf.org/doc/html/rfc8259#section-4
-  - optTrailingComma: allow one trailing comma in arrays and objects,
+  - `optTrailingComma`: allow one trailing comma in arrays and objects,
     like [1,2,].
-  - optEmptyFraction: Allow floating point numbers with no digits after
+  - `optEmptyFraction`: Allow floating point numbers with no digits after
     decimal point (like 1. or 2.e3).
-  - optLineCommentC: allow // comments.
+  - `optLineCommentC`: allow // comments.
 
 ### Changes
 

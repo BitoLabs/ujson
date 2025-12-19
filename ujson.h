@@ -30,21 +30,18 @@ class Obj;
 
 enum Options : uint32_t // Parse options
 {
-    optUniqueMembers    = 1 << 0, // Member names must be unique within the object.
-                                  // On duplicates throw ErrSyntax.
-                                  // If not set, duplicates are accepted, but only
-                                  // the first value can be accessed by name, while other
-                                  // values can be accessed only by index.
-
-    optTrailingComma    = 1 << 1, // One comma allowed after the last array element or object member.
-                                  // Example: { "a": [1, 2, ], "b": 42, }
-
-    optEmptyFraction    = 1 << 2, // Allow floating point numbers with no digits after decimal point.
-                                  // Example: [0., -1., 2.e10]
-
-    optLineCommentC     = 1 << 3, // C style single line comment: //
-
-    optHex              = 1 << 6, // Allow integers in hex format like: 0x1A, 0X2b
+    optUniqueMembers    = 1 << 0, // * Member names must be unique within the object.
+                                  //   On duplicates throw ErrSyntax.
+                                  //   If not set, duplicates are accepted, but only
+                                  //   the first value can be accessed by name, while other
+                                  //   values can be accessed only by index.
+    optTrailingComma    = 1 << 1, // * One comma allowed after the last array element or object member.
+                                  //   Example: { "a": [1, 2, ], "b": 42, }
+    optEmptyFraction    = 1 << 2, // * Allow floating point numbers with no digits after decimal point.
+                                  //   Example: [0., -1., 2.e10]
+    optLineCommentC     = 1 << 3, // * C style single line comment: //
+    optHex              = 1 << 6, // * Allow integers in hex format like: 0x1A, 0X2b
+    optIdentifiers      = 1 << 7, // * Allow object member names as C identifiers without quotes: {foo: "bar"}
 
     optStandard         = 0,      // Conforms to JSON standard, no extra features are allowed.
     optDefault          = optUniqueMembers | optTrailingComma | optEmptyFraction | optLineCommentC,

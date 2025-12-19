@@ -42,8 +42,17 @@ Summary of features
   from the input buffer rather allocating each such token in the heap.
 * The input is in UTF-8 format. The string tokens can contain escape sequences with
   [UTF-16 code points].
-* `//` comments are supported. Note that these are not part of the JSON standard.
 * Number values can be fetched as integers (32 or 64 bit) or as 64-bit float values.
+* Optional extended syntax that is not part of JSON standard. These can
+  be turned ON/OFF:
+    - `//` comments.
+    - Check that member names are unique within the object and raise
+      an error if not. When this feature is OFF, duplicates are allowed
+      as per JSON standard.
+    - Allow trailing commas in arrays and objects: `{"a": [1, 2, ], "b": 42, }`.
+    - Allow no digits after the decimal point: `[0., -1., 2.e10]`.
+    - Allow integers in hex format like: `[0x1A, 0X2b]`.
+    - Allow object member names as C identifiers without quotes: `{foo: "bar"}`.
 * Exceptions are used to handle the errors. See [error handling].
 * Value validation is easy and doesn't require a JSON schema. See:
     - [Number range checking].

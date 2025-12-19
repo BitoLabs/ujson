@@ -598,6 +598,26 @@ private:
         return v;
     }
 
+    const char* parse_member_name()
+    {
+        char* end = nullptr;
+        const char* name = parse_str();
+        if (!name && (m_options & optIdentifiers)) {
+            name = parse_identifier(&end);
+        }
+        if (!name) {
+            throw ErrSyntax("invalid object syntax: expected member name or '}'", m_line_count);
+        }
+        skip_white_space();
+        if (!skip_text(":")) {
+            throw ErrSyntax("invalid object syntax: expected ':' after member name", m_line_count);
+        }
+        if (end) {
+            *end = 0; // ensure identifier is null terminated
+        }
+        return name;
+    }
+
     ObjImpl* parse_val_obj(ArrImpl* parent)
     {
         ObjImpl* obj = nullptr;
@@ -606,14 +626,7 @@ private:
         skip_white_space();
         if (skip_text("}")) return obj;
         while (true) {
-            const char* name = parse_str();
-            if (nullptr == name) {
-                throw ErrSyntax("invalid object syntax: expected member name or '}'", m_line_count);
-            }
-            skip_white_space();
-            if (!skip_text(":")) {
-                throw ErrSyntax("invalid object syntax: expected ':' after member name", m_line_count);
-            }
+            const char* name = parse_member_name();
             skip_white_space();
             size_t idx = obj->get_len();
             ValImpl* v = parse_val(obj);
@@ -902,6 +915,22 @@ private:
         }
         m_next = p;
         return code;
+    }
+
+    const char* parse_identifier(char** end)
+    {
+        char* name = nullptr;
+        char* p = m_next;
+        uint8_t ch = *p;
+        if ('_' != ch && (ch < 'A' || ch > 'Z') && (ch < 'a' || ch > 'z')) return nullptr;
+        while (true) {
+            ch = *(++p);
+            if ('_' != ch && (ch < 'A' || ch > 'Z') && (ch < 'a' || ch > 'z') && (ch < '0' || ch > '9')) break;
+        }
+        name = m_next;
+        m_next = p;
+        *end = p;
+        return name;
     }
 
     bool skip_text(const char* str)
