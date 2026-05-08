@@ -15,8 +15,8 @@ void main() {
     ujson::Json json;
     const ujson::Obj& obj = json.parse(
         "{"
-        "  \"foo\" : 42,
-        "  \"bar\" : \"baz\",
+        "  \"foo\" : 42,"
+        "  \"bar\" : \"baz\","
         "}").as_obj();
 
     int32_t     foo = obj.get_i32("foo");
@@ -36,7 +36,7 @@ Summary of features
 * Compatible with JSON specifaction [RFC8259] and [ECMA-404].
 * The API in [ujson.h] is simple, easy to read and self-explanatory, rarely
   requiring additional documentation.
-* The input is always a memory buffer. To read a JSON file, the application must load the
+* The input is always a memory buffer. To read a JSON file, the application must load
   the file in the memory as a C string and provide it to `ujson`.
 * [In-place parsing] allows referencing the string tokens directly
   from the input buffer rather allocating each such token in the heap.
@@ -199,8 +199,8 @@ void main()
     double opacity   = root.get_f64 ("opacity", 0.0, 1.0, 1.0); // range (0,1), default: 1
 
     const ujson::Arr& menu = root.get_arr("menu");
-    for (int32_t i = 0; i < menu.get_len(); i++) {
-        std::string item = arr.get_str(i);
+    for (size_t i = 0; i < menu.get_len(); i++) {
+        std::string item = menu.get_str(i);
         ...
     }
     ...
@@ -349,7 +349,7 @@ if (const ujson::Obj* x = root.get_obj_opt("x")) {
 
 By default an array `Arr` value can have any number of elements.
 However, if the application must limit the array length and reject
-it if it is not valid, then it can use the `Arr::requre_len()` method
+it if it is not valid, then it can use the `Arr::require_len()` method
 as follows:
 
 ~~~~~~~~cpp
