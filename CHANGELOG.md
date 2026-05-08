@@ -3,8 +3,8 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
-1.3.1 (IN PROGRESS)
-===================
+1.3.1 (2026-05-08)
+==================
 
 ### Fixes
 

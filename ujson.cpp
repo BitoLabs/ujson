@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <utility>
-#include "string.h"
+#include <string.h>
 
 namespace ujson {
 
@@ -545,7 +545,6 @@ public:
     {
         if (0 == len) {
             len = strlen(str);
-            m_end = str + len;
         }
         m_end = str + len;
         str[len] = 0;
