@@ -9,6 +9,8 @@ This project follows [Semantic Versioning](http://semver.org/).
 ### Fixes
 
 * Fix method name typo reject_unknow_members -> reject_unknown_members.
+* Fix default (lo=0, hi=-1) values in methods like get_i32. Now
+  these are (lo=1, hi=0) so that it can work correctly with get_u32.
 
 1.3.0 (2025-12-19)
 ==================

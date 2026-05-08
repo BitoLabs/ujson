@@ -105,11 +105,11 @@ class Int: public Val
 public:
     static constexpr ValType type() { return vtInt; }
     int64_t get() const noexcept;
-    int64_t get(int64_t lo, int64_t hi) const;
+    int64_t get(int64_t lo, int64_t hi) const; // if lo > hi, skip range check
     int32_t get_i32() const; // checks if it fits in int32_t
-    int32_t get_i32(int32_t lo, int32_t hi) const;
+    int32_t get_i32(int32_t lo, int32_t hi) const; // if lo > hi, skip range check
     uint32_t get_u32() const; // checks if it fits in uint32_t
-    uint32_t get_u32(uint32_t lo, uint32_t hi) const;
+    uint32_t get_u32(uint32_t lo, uint32_t hi) const; // if lo > hi, skip range check
 protected:
     Int() = default;
     Int(const Int&) = delete;
@@ -121,7 +121,7 @@ class F64: public Val
 public:
     static constexpr ValType type() { return vtF64; }
     double get() const noexcept;
-    double get(double lo, double hi) const;
+    double get(double lo, double hi) const; // if lo > hi, skip range check
 protected:
     F64() = default;
     F64(const F64&) = delete;
@@ -156,10 +156,10 @@ public:
     const Arr& require_len(size_t lo, size_t hi) const; // throws ErrBadArrLen
     const Val& get_element(size_t idx) const;
     bool get_bool(size_t idx) const;
-    int32_t get_i32(size_t idx, int32_t lo = 0, int32_t hi = -1) const;
-    uint32_t get_u32(size_t idx, uint32_t lo = 0, uint32_t hi = -1) const;
-    int64_t get_i64(size_t idx, int64_t lo = 0, int64_t hi = -1) const;
-    double get_f64(size_t idx, double lo = 0.0, double hi = -1.0) const;
+    int32_t get_i32(size_t idx, int32_t lo = 1, int32_t hi = 0) const; // if lo > hi, skip range check
+    uint32_t get_u32(size_t idx, uint32_t lo = 1, uint32_t hi = 0) const; // if lo > hi, skip range check
+    int64_t get_i64(size_t idx, int64_t lo = 1, int64_t hi = 0) const; // if lo > hi, skip range check
+    double get_f64(size_t idx, double lo = 1.0, double hi = 0.0) const; // if lo > hi, skip range check
     const char* get_str(size_t idx) const;
     const Arr& get_arr(size_t idx) const;
     const Obj& get_obj(size_t idx) const;
@@ -178,14 +178,14 @@ public:
     const Val* get_member(const char* name, bool required=true) const;
     bool get_bool(const char* name, const bool* def = nullptr) const;
     bool get_bool(const char* name, bool def) const { return get_bool(name, &def); }
-    int32_t get_i32(const char* name, int32_t lo = 0, int32_t hi = -1, const int32_t* def = nullptr) const;
-    int32_t get_i32(const char* name, int32_t lo, int32_t hi, int32_t def) const { return get_i32(name, lo, hi, &def); }
-    uint32_t get_u32(const char* name, uint32_t lo = 0, uint32_t hi = -1, const uint32_t* def = nullptr) const;
-    uint32_t get_u32(const char* name, uint32_t lo, uint32_t hi, uint32_t def) const { return get_u32(name, lo, hi, &def); }
-    int64_t get_i64(const char* name, int64_t lo = 0, int64_t hi = -1, const int64_t* def = nullptr) const;
-    int64_t get_i64(const char* name, int64_t lo, int64_t hi, int64_t def) const { return get_i64(name, lo, hi, &def); }
-    double get_f64(const char* name, double lo = 0.0, double hi = -1.0, const double* def = nullptr) const;
-    double get_f64(const char* name, double lo, double hi, double def) const { return get_f64(name, lo, hi, &def); }
+    int32_t get_i32(const char* name, int32_t lo = 1, int32_t hi = 0, const int32_t* def = nullptr) const; // if lo > hi, skip range check
+    int32_t get_i32(const char* name, int32_t lo, int32_t hi, int32_t def) const { return get_i32(name, lo, hi, &def); } // if lo > hi, skip range check
+    uint32_t get_u32(const char* name, uint32_t lo = 1, uint32_t hi = 0, const uint32_t* def = nullptr) const; // if lo > hi, skip range check
+    uint32_t get_u32(const char* name, uint32_t lo, uint32_t hi, uint32_t def) const { return get_u32(name, lo, hi, &def); } // if lo > hi, skip range check
+    int64_t get_i64(const char* name, int64_t lo = 1, int64_t hi = 0, const int64_t* def = nullptr) const; // if lo > hi, skip range check
+    int64_t get_i64(const char* name, int64_t lo, int64_t hi, int64_t def) const { return get_i64(name, lo, hi, &def); } // if lo > hi, skip range check
+    double get_f64(const char* name, double lo = 1.0, double hi = 0.0, const double* def = nullptr) const; // if lo > hi, skip range check
+    double get_f64(const char* name, double lo, double hi, double def) const { return get_f64(name, lo, hi, &def); } // if lo > hi, skip range check
     const char* get_str(const char* name, const char* def = nullptr) const;
     int32_t get_str_enum_idx(const char* name, const char* const str_set[], size_t len, bool required = true) const;
     template <typename T, size_t N>
