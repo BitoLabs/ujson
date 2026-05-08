@@ -271,7 +271,7 @@ int32_t Val::get_line() const
     return ValImpl::from(this).m_line_no;
 }
 
-static void do_reject_unknow_members(const ValImpl* v)
+static void do_reject_unknown_members(const ValImpl* v)
 {
     if (v->get_type() & (vtArr | vtObj)) {
         const ArrImpl& arr = *static_cast<const ArrImpl*>(v);
@@ -280,14 +280,14 @@ static void do_reject_unknow_members(const ValImpl* v)
             if (0 == (v->m_type & vtUsedBit) && (arr.get_type() & vtObj)) {
                 throw ErrUnknownMember(*v);
             }
-            do_reject_unknow_members(v);
+            do_reject_unknown_members(v);
         }
     }
 }
 
-void Val::reject_unknow_members() const
+void Val::reject_unknown_members() const
 {
-    do_reject_unknow_members(&ValImpl::from(this));
+    do_reject_unknown_members(&ValImpl::from(this));
 }
 
 static void do_ignore_members(const ValImpl* v)

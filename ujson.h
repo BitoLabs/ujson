@@ -81,7 +81,7 @@ public:
     const Str& as_str() const;
     const Arr& as_arr() const;
     const Obj& as_obj() const;
-    void reject_unknow_members() const; // throws ErrUnknownMember if any named child value was not accessed
+    void reject_unknown_members() const; // throws ErrUnknownMember if any named child value was not accessed
     void ignore_members() const noexcept; // marks recursively all children as accessed
 protected:
     Val() = default;

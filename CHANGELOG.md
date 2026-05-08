@@ -3,6 +3,13 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
+1.3.1 (IN PROGRESS)
+===================
+
+### Fixes
+
+* Fix method name typo reject_unknow_members -> reject_unknown_members.
+
 1.3.0 (2025-12-19)
 ==================
 
