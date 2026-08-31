@@ -3,6 +3,13 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
+1.3.2 (2026-08-31)
+==================
+
+### Fixes
+
+* Fix memory leak when there are errors parsing JSON input.
+
 1.3.1 (2026-05-08)
 ==================
 

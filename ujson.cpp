@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <utility>
+#include <tuple>  // for std::ignore
 #include <string.h>
 
 namespace ujson {
@@ -550,17 +551,34 @@ public:
         str[len] = 0;
     }
 
+    Parser(const Parser&) = delete; // we are not copying Parser
+
+    ~Parser() noexcept
+    {
+        if (m_root) {
+            m_root->clear();
+            delete m_root;
+            m_root = nullptr;
+        }
+    }
+
     ValImpl* parse()
     {
-        ValImpl* v = parse_val(nullptr);
+        std::ignore = parse_val(nullptr);
         skip_white_space();
         if (0 != *m_next) {
             throw ErrSyntax("invalid syntax at the end of json", m_line_count);
         }
-        return v;
+        // The ownership of root value is passed to the caller.
+        // By setting m_root to null, we avoid freeing it in ~Parser().
+        ValImpl* root = m_root;
+        m_root = nullptr;
+        return root;
     }
 
 private:
+    ValImpl* m_root = nullptr;
+
     
     ValImpl* parse_val(ArrImpl* parent)
     {
@@ -593,6 +611,7 @@ private:
         ValImpl* v = (parent)?
             &parent->add_element() :
             new ValImpl;
+        if (!parent) m_root = v;
         v->m_line_no = m_line_count;
         return v;
     }
