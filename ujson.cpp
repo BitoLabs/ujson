@@ -551,7 +551,8 @@ public:
         str[len] = 0;
     }
 
-    Parser(const Parser&) = delete; // we are not copying Parser
+    Parser(const Parser&) = delete;            // disable copying Parser
+    Parser& operator=(const Parser&) = delete; // ...
 
     ~Parser() noexcept
     {
