@@ -27,6 +27,28 @@ class F64;
 class Str;
 class Arr;
 class Obj;
+class ValImpl; // internal class
+
+// REVIEW!!!: Change below comments:
+//
+// Minimal "optional view", used only as the return type of the handful
+// of methods where a result may legitimately be absent (get_member,
+// get_arr_opt, get_obj_opt). Unlike std::optional<T>, this adds no
+// separate "has value" flag: T (Val/Arr/Obj) already has its own empty
+// state via operator bool(), so Opt<T> just holds a T and forwards to
+// it -- sizeof(Opt<T>) == sizeof(T).
+template <typename T>
+class Opt
+{
+public:
+    explicit Opt(const ValImpl* impl) noexcept : m_val(impl) {}
+    Opt(T val) noexcept : m_val(val) {} // wrap an already-obtained T directly
+    explicit operator bool() const noexcept { return bool(m_val); }
+    const T* operator->() const noexcept { return &m_val; }
+    const T& operator*() const noexcept { return m_val; }
+private:
+    T m_val;
+};
 
 enum Options : uint32_t // Parse options
 {
@@ -63,46 +85,50 @@ private:
     void free_root() noexcept;
     void free_buf() noexcept;
 private:
-    Val*  m_root = nullptr;
-    char* m_buf  = nullptr;
+    ValImpl* m_root = nullptr;      // owns the parsed tree // REVIEW!!! comment
+    Val*     m_root_view = nullptr; // wraps m_root; parse() returns *this
+    char*    m_buf  = nullptr;
 };
 
 class Val
 {
 public:
+    // TODO!!!: will static analyzers complain about rule of 5?
+    explicit Val(const ValImpl* impl) noexcept : m_impl(impl) {} // TODO!!! shall this be public?
+    explicit operator bool() const noexcept { return nullptr != m_impl; } // true if this is not an "empty" view // REVIEW!!! comment
+
     ValType get_type() const noexcept;
     int32_t get_idx() const noexcept; // -1 if not an array element
     const char* get_name() const noexcept;
     int32_t get_line() const;
     bool is_num() const noexcept;
-    const Bool& as_bool() const;
-    const Int& as_int() const;
-    const F64& as_f64() const;
-    const Str& as_str() const;
-    const Arr& as_arr() const;
-    const Obj& as_obj() const;
+    Bool as_bool() const;
+    Int as_int() const;
+    F64 as_f64() const;
+    Str as_str() const;
+    Arr as_arr() const;
+    Obj as_obj() const;
     void reject_unknown_members() const; // throws ErrUnknownMember if any named child value was not accessed
     void ignore_members() const noexcept; // marks recursively all children as accessed
 protected:
-    Val() = default;
-    Val(const Val&) = default;
-    ~Val() = default;
+    template<class T, uint32_t E> // REVIEW!!!
+    T val_cast() const;
+
+    const ValImpl* m_impl = nullptr; // REVIEW!!!
 };
 
 class Bool: public Val
 {
 public:
+    using Val::Val;
     static constexpr ValType type() { return vtBool; }
     bool get() const noexcept;
-protected:
-    Bool() = default;
-    Bool(const Bool&) = delete;
-    ~Bool() = default;
 };
 
 class Int: public Val
 {
 public:
+    using Val::Val;
     static constexpr ValType type() { return vtInt; }
     int64_t get() const noexcept;
     int64_t get(int64_t lo, int64_t hi) const; // if lo > hi, skip range check
@@ -110,27 +136,21 @@ public:
     int32_t get_i32(int32_t lo, int32_t hi) const; // if lo > hi, skip range check
     uint32_t get_u32() const; // checks if it fits in uint32_t
     uint32_t get_u32(uint32_t lo, uint32_t hi) const; // if lo > hi, skip range check
-protected:
-    Int() = default;
-    Int(const Int&) = delete;
-    ~Int() = default;
 };
 
 class F64: public Val
 {
 public:
+    using Val::Val;
     static constexpr ValType type() { return vtF64; }
     double get() const noexcept;
     double get(double lo, double hi) const; // if lo > hi, skip range check
-protected:
-    F64() = default;
-    F64(const F64&) = delete;
-    ~F64() = default;
 };
 
 class Str: public Val
 {
 public:
+    using Val::Val;
     static constexpr ValType type() { return vtStr; }
     const char* get() const noexcept;
     int32_t get_enum_idx(const char* const str_set[], size_t len) const;
@@ -141,41 +161,35 @@ public:
     {
         return val_set[get_enum_idx(str_set.data(), str_set.size())];
     }
-protected:
-    Str() = default;
-    Str(const Str&) = delete;
-    ~Str() = default;
 };
 
 class Arr: public Val
 {
 public:
+    using Val::Val;
     static constexpr ValType type() { return vtArr; }
     size_t get_len() const noexcept;
-    const Arr& require_len(size_t len) const { return require_len(len, len); } // throws ErrBadArrLen
-    const Arr& require_len(size_t lo, size_t hi) const; // throws ErrBadArrLen
-    const Val& get_element(size_t idx) const;
+    Arr require_len(size_t len) const { return require_len(len, len); } // throws ErrBadArrLen
+    Arr require_len(size_t lo, size_t hi) const; // throws ErrBadArrLen
+    Val get_element(size_t idx) const;
     bool get_bool(size_t idx) const;
     int32_t get_i32(size_t idx, int32_t lo = 1, int32_t hi = 0) const; // if lo > hi, skip range check
     uint32_t get_u32(size_t idx, uint32_t lo = 1, uint32_t hi = 0) const; // if lo > hi, skip range check
     int64_t get_i64(size_t idx, int64_t lo = 1, int64_t hi = 0) const; // if lo > hi, skip range check
     double get_f64(size_t idx, double lo = 1.0, double hi = 0.0) const; // if lo > hi, skip range check
     const char* get_str(size_t idx) const;
-    const Arr& get_arr(size_t idx) const;
-    const Obj& get_obj(size_t idx) const;
-protected:
-    Arr() = default;
-    Arr(const Arr&) = delete;
-    ~Arr() = default;
+    Arr get_arr(size_t idx) const;
+    Obj get_obj(size_t idx) const;
 };
 
 class Obj: public Arr
 {
 public:
+    using Arr::Arr;
     static constexpr ValType type() { return vtObj; }
     int32_t get_member_idx(const char* name, bool required=true) const; // -1 if not found
     const char* get_member_name(size_t idx) const;
-    const Val* get_member(const char* name, bool required=true) const;
+    Opt<Val> get_member(const char* name, bool required=true) const;
     bool get_bool(const char* name, const bool* def = nullptr) const;
     bool get_bool(const char* name, bool def) const { return get_bool(name, &def); }
     int32_t get_i32(const char* name, int32_t lo = 1, int32_t hi = 0, const int32_t* def = nullptr) const; // if lo > hi, skip range check
@@ -206,14 +220,10 @@ public:
         int32_t i = get_str_enum_idx(name, str_set.data(), str_set.size(), false);
         return (i >= 0) ? val_set[i] : def;
     }
-    const Arr& get_arr(const char* name) const;
-    const Arr* get_arr_opt(const char* name) const; // if name is missing, return null
-    const Obj& get_obj(const char* name) const;
-    const Obj* get_obj_opt(const char* name) const; // if name is missing, return null
-protected:
-    Obj() = default;
-    Obj(const Obj&) = delete;
-    ~Obj() = default;
+    Arr get_arr(const char* name) const;
+    Opt<Arr> get_arr_opt(const char* name) const; // if name is missing, bool(result) == false // REVIEW!!!
+    Obj get_obj(const char* name) const;
+    Opt<Obj> get_obj_opt(const char* name) const; // if name is missing, bool(result) == false // REVIEW!!!
 };
 
 struct Err : std::runtime_error {
@@ -234,6 +244,7 @@ struct ErrValue : Err // errors that occur when value validation fails (after it
     int32_t     val_idx;
     ValType     val_type;
 
+    // TODO!!! Decide if we need Val& or just Val. Same in other cases.
     explicit ErrValue(const char* msg, const Val& v) noexcept;
     std::string get_err_str() const override;
 };

@@ -26,7 +26,7 @@ const uint32_t vtUsedBit = 1U << 31; // Bit in m_type indicating that the value 
 class ArrImpl;
 class ObjImpl;
 
-class ValImpl: public Val
+class ValImpl
 {
 public:
     struct List {
@@ -97,14 +97,13 @@ public:
         m_type |= vtUsedBit;
     }
 
-    static const ValImpl& from(const Val* v)
+    // REVIEW!!!
+    // Val used to inherit this via "class ValImpl: public Val"; now that
+    // ValImpl no longer derives from Val, it needs its own copy of this
+    // one-line bit-masking logic, which Val::get_type() below delegates to.
+    ValType get_type() const noexcept
     {
-        return *static_cast<const ValImpl*>(v);
-    }
-
-    static ValImpl& from(Val* v)
-    {
-        return *static_cast<ValImpl*>(v);
+        return static_cast<ValType>(m_type & ~vtUsedBit);
     }
 
 public:
@@ -125,9 +124,9 @@ class ArrImpl : public ValImpl
 {
 public:
 
-    static const ArrImpl& from(const Arr* arr)
+    static const ArrImpl& from(const ValImpl* impl) // REVIEW!!!
     {
-        return *reinterpret_cast<const ArrImpl*>(arr);
+        return *static_cast<const ArrImpl*>(impl);
     }
 
     size_t get_len() const
@@ -158,14 +157,9 @@ class ObjImpl : public ArrImpl
 {
 public:
 
-    static const ObjImpl& from(const Obj* obj)
+    static const ObjImpl& from(const ValImpl* impl) // REVIEW!!!
     {
-        return *reinterpret_cast<const ObjImpl*>(obj);
-    }
-
-    const Obj& as_obj() const
-    {
-        return *static_cast<const Obj*>(static_cast<const Val*>(this));
+        return *static_cast<const ObjImpl*>(impl);
     }
 
     int32_t find(const char* name) const
@@ -209,27 +203,27 @@ static void str_copy(char* dst, const char* src, size_t count)
 }
 
 template<class T, uint32_t E>
-const T& val_cast(const Val* v)
+T Val::val_cast() const
 {
-    if ((v->get_type() & E) == 0) {
-        throw ErrBadType(*v, T::type());
+    if ((get_type() & E) == 0) {
+        throw ErrBadType(*this, T::type());
     }
-    return *static_cast<const T*>(v);
+    return T(m_impl);
 }
 
 ValType Val::get_type() const noexcept
 {
-    return static_cast<ValType>(ValImpl::from(this).m_type & ~vtUsedBit);
+    return m_impl->get_type();
 }
 
 int32_t Val::get_idx() const noexcept
 {
-    return ValImpl::from(this).m_idx;
+    return m_impl->m_idx;
 }
 
 const char* Val::get_name() const noexcept
 {
-    return ValImpl::from(this).m_name;
+    return m_impl->m_name;
 }
 
 bool Val::is_num() const noexcept
@@ -237,39 +231,39 @@ bool Val::is_num() const noexcept
     return (get_type() & (vtInt | vtF64)) != 0;
 }
 
-const Bool& Val::as_bool() const
+Bool Val::as_bool() const
 {
-    return val_cast<Bool, vtBool>(this);
+    return val_cast<Bool, vtBool>();
 }
 
-const Int& Val::as_int() const
+Int Val::as_int() const
 {
-    return val_cast<Int, vtInt>(this);
+    return val_cast<Int, vtInt>();
 }
 
-const F64& Val::as_f64() const
+F64 Val::as_f64() const
 {
-    return val_cast<F64, vtInt | vtF64>(this);
+    return val_cast<F64, vtInt | vtF64>();
 }
 
-const Str& Val::as_str() const
+Str Val::as_str() const
 {
-    return val_cast<Str, vtStr>(this);
+    return val_cast<Str, vtStr>();
 }
 
-const Arr& Val::as_arr() const
+Arr Val::as_arr() const
 {
-    return val_cast<Arr, vtArr>(this);
+    return val_cast<Arr, vtArr>();
 }
 
-const Obj& Val::as_obj() const
+Obj Val::as_obj() const
 {
-    return val_cast<Obj, vtObj>(this);
+    return val_cast<Obj, vtObj>();
 }
 
 int32_t Val::get_line() const
 {
-    return ValImpl::from(this).m_line_no;
+    return m_impl->m_line_no;
 }
 
 static void do_reject_unknown_members(const ValImpl* v)
@@ -279,7 +273,7 @@ static void do_reject_unknown_members(const ValImpl* v)
         for (size_t i = 0; i < arr.get_len(); i++) {
             v = &arr.get_element(i);
             if (0 == (v->m_type & vtUsedBit) && (arr.get_type() & vtObj)) {
-                throw ErrUnknownMember(*v);
+                throw ErrUnknownMember(Val(v));
             }
             do_reject_unknown_members(v);
         }
@@ -288,7 +282,7 @@ static void do_reject_unknown_members(const ValImpl* v)
 
 void Val::reject_unknown_members() const
 {
-    do_reject_unknown_members(&ValImpl::from(this));
+    do_reject_unknown_members(m_impl);
 }
 
 static void do_ignore_members(const ValImpl* v)
@@ -305,17 +299,17 @@ static void do_ignore_members(const ValImpl* v)
 
 void Val::ignore_members() const noexcept
 {
-    do_ignore_members(&ValImpl::from(this));
+    do_ignore_members(m_impl);
 }
 
 bool Bool::get() const noexcept
 {
-    return ValImpl::from(this).m_data.b;
+    return m_impl->m_data.b;
 }
 
 int64_t Int::get() const noexcept
 {
-    return ValImpl::from(this).m_data.i64;
+    return m_impl->m_data.i64;
 }
 
 int64_t Int::get(int64_t lo, int64_t hi) const
@@ -357,8 +351,7 @@ uint32_t Int::get_u32(uint32_t lo, uint32_t hi) const
 
 double F64::get() const noexcept
 {
-    auto& impl = ValImpl::from(this);
-    return (vtInt & impl.get_type()) ? impl.m_data.i64 : impl.m_data.f64;
+    return (vtInt & m_impl->get_type()) ? m_impl->m_data.i64 : m_impl->m_data.f64;
 }
 
 double F64::get(double lo, double hi) const
@@ -372,7 +365,7 @@ double F64::get(double lo, double hi) const
 
 const char* Str::get() const noexcept
 {
-    return ValImpl::from(this).m_data.str;
+    return m_impl->m_data.str;
 }
 
 int32_t Str::get_enum_idx(const char* const str_set[], size_t len) const
@@ -386,10 +379,10 @@ int32_t Str::get_enum_idx(const char* const str_set[], size_t len) const
 
 size_t Arr::get_len() const noexcept
 {
-    return ArrImpl::from(this).get_len();
+    return ArrImpl::from(m_impl).get_len();
 }
 
-const Arr& Arr::require_len(size_t lo, size_t hi) const
+Arr Arr::require_len(size_t lo, size_t hi) const
 {
     const size_t len = get_len();
     if (len < lo || len > hi) {
@@ -398,11 +391,11 @@ const Arr& Arr::require_len(size_t lo, size_t hi) const
     return *this;
 }
 
-const Val& Arr::get_element(size_t idx) const
+Val Arr::get_element(size_t idx) const
 {
-    const ValImpl& v = ArrImpl::from(this).get_element(idx);
+    const ValImpl& v = ArrImpl::from(m_impl).get_element(idx);
     v.mark_as_used();
-    return v;
+    return Val(&v);
 }
 
 bool Arr::get_bool(size_t idx) const
@@ -435,19 +428,19 @@ const char* Arr::get_str(size_t idx) const
     return get_element(idx).as_str().get();
 }
 
-const Arr& Arr::get_arr(size_t idx) const
+Arr Arr::get_arr(size_t idx) const
 {
     return get_element(idx).as_arr();
 }
 
-const Obj& Arr::get_obj(size_t idx) const
+Obj Arr::get_obj(size_t idx) const
 {
     return get_element(idx).as_obj();
 }
 
 int32_t Obj::get_member_idx(const char* name, bool required) const
 {
-    auto& self = ObjImpl::from(this);
+    auto& self = ObjImpl::from(m_impl);
     int32_t idx = self.find(name);
     if (required && idx < 0) {
         throw ErrMemberNotFound(*this, name);
@@ -457,48 +450,51 @@ int32_t Obj::get_member_idx(const char* name, bool required) const
 
 const char* Obj::get_member_name(size_t idx) const
 {
-    return ObjImpl::from(this).get_element(idx).get_name();
+    return ObjImpl::from(m_impl).get_element(idx).m_name;
 }
 
-const Val* Obj::get_member(const char* name, bool required) const
+Opt<Val> Obj::get_member(const char* name, bool required) const
 {
     const int32_t idx = get_member_idx(name, required);
-    return (idx >= 0) ? &get_element(static_cast<size_t>(idx)) : nullptr;
+    if (idx < 0) {
+        return Opt<Val>(nullptr);
+    }
+    return get_element(static_cast<size_t>(idx));
 }
 
 bool Obj::get_bool(const char* name, const bool* def) const
 {
-    auto* v = get_member(name, nullptr == def);
+    auto v = get_member(name, nullptr == def);
     return v ? v->as_bool().get() : *def;
 }
 
 int32_t Obj::get_i32(const char* name, int32_t lo, int32_t hi, const int32_t* def) const
 {
-    auto* v = get_member(name, nullptr == def);
+    auto v = get_member(name, nullptr == def);
     return v ? v->as_int().get_i32(lo, hi) : *def;
 }
 
 uint32_t Obj::get_u32(const char* name, uint32_t lo, uint32_t hi, const uint32_t* def) const
 {
-    auto* v = get_member(name, nullptr == def);
+    auto v = get_member(name, nullptr == def);
     return v ? v->as_int().get_u32(lo, hi) : *def;
 }
 
 int64_t Obj::get_i64(const char* name, int64_t lo, int64_t hi, const int64_t* def) const
 {
-    auto* v = get_member(name, nullptr == def);
+    auto v = get_member(name, nullptr == def);
     return v ? v->as_int().get(lo, hi) : *def;
 }
 
 double Obj::get_f64(const char* name, double lo, double hi, const double* def) const
 {
-    auto* v = get_member(name, nullptr == def);
+    auto v = get_member(name, nullptr == def);
     return v ? v->as_f64().get(lo, hi) : *def;
 }
 
 const char* Obj::get_str(const char* name, const char* def) const
 {
-    auto* v = get_member(name, nullptr == def);
+    auto v = get_member(name, nullptr == def);
     return v ? v->as_str().get() : def;
 }
 
@@ -508,31 +504,33 @@ int32_t Obj::get_str_enum_idx(
     size_t len,
     bool required) const
 {
-    const Val* v = get_member(name, required);
-    if (nullptr == v) return -1;
+    auto v = get_member(name, required);
+    if (!v) return -1;
     return v->as_str().get_enum_idx(str_set, len);
 }
 
-const Arr& Obj::get_arr(const char* name) const
+Arr Obj::get_arr(const char* name) const
 {
     return get_member(name)->as_arr();
 }
 
-const Arr* Obj::get_arr_opt(const char* name) const
+Opt<Arr> Obj::get_arr_opt(const char* name) const
 {
-    const Val* v = get_member(name, false);
-    return v ? &v->as_arr() : nullptr;
+    auto v = get_member(name, false);
+    if (!v) return Opt<Arr>(nullptr);
+    return v->as_arr();
 }
 
-const Obj& Obj::get_obj(const char* name) const
+Obj Obj::get_obj(const char* name) const
 {
     return get_member(name)->as_obj();
 }
 
-const Obj* Obj::get_obj_opt(const char* name) const
+Opt<Obj> Obj::get_obj_opt(const char* name) const
 {
-    const Val* v = get_member(name, false);
-    return v ? &v->as_obj() : nullptr;
+    auto v = get_member(name, false);
+    if (!v) return Opt<Obj>(nullptr);
+    return v->as_obj();
 }
 
 class Parser
@@ -1182,11 +1180,12 @@ void Json::clear() noexcept
 void Json::free_root() noexcept
 {
     if (nullptr != m_root) {
-        auto* v = &ValImpl::from(m_root);
-        v->clear();
-        delete v;
+        m_root->clear();
+        delete m_root;
         m_root = nullptr;
     }
+    delete m_root_view;
+    m_root_view = nullptr;
 }
 
 void Json::free_buf() noexcept
@@ -1211,7 +1210,11 @@ const Val& Json::parse_in_place(char* str, size_t len, uint32_t options)
     free_root();
     Parser p(str, len, options);
     m_root = p.parse();
-    return *m_root;
+
+    // TODO!!!: Why we need m_root_view?
+    //          Can we just return Val by value in parse() and parse_in_place()?
+    m_root_view = new Val(m_root);
+    return *m_root_view;
 }
 
 }; // namespace ujson
