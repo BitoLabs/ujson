@@ -97,15 +97,6 @@ public:
         m_type |= vtUsedBit;
     }
 
-    // REVIEW!!!
-    // Val used to inherit this via "class ValImpl: public Val"; now that
-    // ValImpl no longer derives from Val, it needs its own copy of this
-    // one-line bit-masking logic, which Val::get_type() below delegates to.
-    ValType get_type() const noexcept
-    {
-        return static_cast<ValType>(m_type & ~vtUsedBit);
-    }
-
 public:
     union {
         bool        b;
@@ -213,7 +204,7 @@ T Val::val_cast() const
 
 ValType Val::get_type() const noexcept
 {
-    return m_impl->get_type();
+    return m_impl ? static_cast<ValType>(m_impl->m_type & ~vtUsedBit) : vtNone;
 }
 
 int32_t Val::get_idx() const noexcept
@@ -268,11 +259,11 @@ int32_t Val::get_line() const
 
 static void do_reject_unknown_members(const ValImpl* v)
 {
-    if (v->get_type() & (vtArr | vtObj)) {
+    if (v->m_type & (vtArr | vtObj)) {
         const ArrImpl& arr = *static_cast<const ArrImpl*>(v);
         for (size_t i = 0; i < arr.get_len(); i++) {
             v = &arr.get_element(i);
-            if (0 == (v->m_type & vtUsedBit) && (arr.get_type() & vtObj)) {
+            if (0 == (v->m_type & vtUsedBit) && (arr.m_type & vtObj)) {
                 throw ErrUnknownMember(Val(v));
             }
             do_reject_unknown_members(v);
@@ -287,7 +278,7 @@ void Val::reject_unknown_members() const
 
 static void do_ignore_members(const ValImpl* v)
 {
-    if (v->get_type() & (vtArr | vtObj)) {
+    if (v->m_type & (vtArr | vtObj)) {
         const ArrImpl& arr = *static_cast<const ArrImpl*>(v);
         for (size_t i = 0; i < arr.get_len(); i++) {
             v = &arr.get_element(i);
@@ -351,7 +342,7 @@ uint32_t Int::get_u32(uint32_t lo, uint32_t hi) const
 
 double F64::get() const noexcept
 {
-    return (vtInt & m_impl->get_type()) ? m_impl->m_data.i64 : m_impl->m_data.f64;
+    return (vtInt & m_impl->m_type) ? m_impl->m_data.i64 : m_impl->m_data.f64;
 }
 
 double F64::get(double lo, double hi) const
