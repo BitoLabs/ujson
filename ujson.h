@@ -95,11 +95,10 @@ public:
     explicit Val(const ValImpl* impl) noexcept : m_impl(impl) {}
     explicit operator bool() const noexcept { return has_value(); }
     bool has_value() const noexcept { return nullptr != m_impl; }
-
     ValType get_type() const noexcept;
     int32_t get_idx() const noexcept; // -1 if not an array element
-    const char* get_name() const noexcept; // REVIEW!!! return "" if m_impl is null
-    int32_t get_line() const; // REVIEW!!! return 0 if m_impl is null
+    const char* get_name() const noexcept;
+    int32_t get_line() const;
     bool is_num() const noexcept;
     Bool as_bool() const;
     Int as_int() const;

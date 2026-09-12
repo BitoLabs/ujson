@@ -214,7 +214,7 @@ int32_t Val::get_idx() const noexcept
 
 const char* Val::get_name() const noexcept
 {
-    return m_impl->m_name;
+    return m_impl ? m_impl->m_name : "";
 }
 
 bool Val::is_num() const noexcept
@@ -254,7 +254,7 @@ Obj Val::as_obj() const
 
 int32_t Val::get_line() const
 {
-    return m_impl->m_line_no;
+    return m_impl? m_impl->m_line_no : 0;
 }
 
 static void do_reject_unknown_members(const ValImpl* v)
