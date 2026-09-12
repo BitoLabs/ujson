@@ -93,14 +93,14 @@ private:
 class Val
 {
 public:
-    // TODO!!!: will static analyzers complain about rule of 5?
-    explicit Val(const ValImpl* impl) noexcept : m_impl(impl) {} // TODO!!! shall this be public?
-    explicit operator bool() const noexcept { return nullptr != m_impl; } // true if this is not an "empty" view // REVIEW!!! comment
+    explicit Val(const ValImpl* impl) noexcept : m_impl(impl) {}
+    explicit operator bool() const noexcept { return has_value(); }
+    bool has_value() const noexcept { return nullptr != m_impl; }
 
-    ValType get_type() const noexcept;
-    int32_t get_idx() const noexcept; // -1 if not an array element
-    const char* get_name() const noexcept;
-    int32_t get_line() const;
+    ValType get_type() const noexcept; // REVIEW!!! return vtNone if m_impl is null
+    int32_t get_idx() const noexcept; // -1 if not an array element // REVIEW!!! return -1 if m_impl is null
+    const char* get_name() const noexcept; // REVIEW!!! return "" if m_impl is null
+    int32_t get_line() const; // REVIEW!!! return 0 if m_impl is null
     bool is_num() const noexcept;
     Bool as_bool() const;
     Int as_int() const;
@@ -111,10 +111,10 @@ public:
     void reject_unknown_members() const; // throws ErrUnknownMember if any named child value was not accessed
     void ignore_members() const noexcept; // marks recursively all children as accessed
 protected:
-    template<class T, uint32_t E> // REVIEW!!!
+    template<class T, uint32_t E> // REVIEW!!! can it be only in .cpp? Make it one-line
     T val_cast() const;
 
-    const ValImpl* m_impl = nullptr; // REVIEW!!!
+    const ValImpl* m_impl = nullptr; // REVIEW!!! rename to const Node* m_node;
 };
 
 class Bool: public Val

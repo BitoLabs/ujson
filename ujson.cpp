@@ -120,7 +120,7 @@ public:
     int32_t           m_idx = -1;       //  4 bytes
 };
 
-class ArrImpl : public ValImpl
+class ArrImpl : public ValImpl // REVIEW!!! merge with Node?
 {
 public:
 
@@ -153,7 +153,7 @@ public:
 
 };
 
-class ObjImpl : public ArrImpl
+class ObjImpl : public ArrImpl // REVIEW!!! merge with Node?
 {
 public:
 
@@ -282,7 +282,7 @@ static void do_reject_unknown_members(const ValImpl* v)
 
 void Val::reject_unknown_members() const
 {
-    do_reject_unknown_members(m_impl);
+    do_reject_unknown_members(m_impl); // REVIEW!!! make it null-safe. Perhaps use Val instead of ValImpl. Or better make it Arr method.
 }
 
 static void do_ignore_members(const ValImpl* v)
@@ -299,7 +299,7 @@ static void do_ignore_members(const ValImpl* v)
 
 void Val::ignore_members() const noexcept
 {
-    do_ignore_members(m_impl);
+    do_ignore_members(m_impl); // REVIEW!!! make it null-safe. Perhaps use Val instead of ValImpl. Or better make it Arr method.
 }
 
 bool Bool::get() const noexcept
