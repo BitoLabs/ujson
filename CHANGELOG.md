@@ -14,6 +14,7 @@ This project follows [Semantic Versioning](http://semver.org/).
 * has_value() added.
 * Val::operator bool() added.
 * Val methods are null-safe.
+* Add get_member_opt().
 
 1.3.2 (2026-08-31)
 ==================
