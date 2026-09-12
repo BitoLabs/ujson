@@ -29,27 +29,6 @@ class Arr;
 class Obj;
 class ValImpl; // internal class
 
-// REVIEW!!!: Change below comments:
-//
-// Minimal "optional view", used only as the return type of the handful
-// of methods where a result may legitimately be absent (get_member,
-// get_arr_opt, get_obj_opt). Unlike std::optional<T>, this adds no
-// separate "has value" flag: T (Val/Arr/Obj) already has its own empty
-// state via operator bool(), so Opt<T> just holds a T and forwards to
-// it -- sizeof(Opt<T>) == sizeof(T).
-template <typename T>
-class Opt
-{
-public:
-    explicit Opt(const ValImpl* impl) noexcept : m_val(impl) {}
-    Opt(T val) noexcept : m_val(val) {} // wrap an already-obtained T directly
-    explicit operator bool() const noexcept { return bool(m_val); }
-    const T* operator->() const noexcept { return &m_val; }
-    const T& operator*() const noexcept { return m_val; }
-private:
-    T m_val;
-};
-
 enum Options : uint32_t // Parse options
 {
     optUniqueMembers    = 1 << 0, // * Member names must be unique within the object.
@@ -220,9 +199,9 @@ public:
         return (i >= 0) ? val_set[i] : def;
     }
     Arr get_arr(const char* name) const;
-    Opt<Arr> get_arr_opt(const char* name) const; // if name is missing, bool(result) == false // REVIEW!!!
+    Arr get_arr_opt(const char* name) const; // example: if (auto arr = parent.get_arr_opt(name)) { ... }
     Obj get_obj(const char* name) const;
-    Opt<Obj> get_obj_opt(const char* name) const; // if name is missing, bool(result) == false // REVIEW!!!
+    Obj get_obj_opt(const char* name) const; // example: if (auto obj = parent.get_obj_opt(name)) { ... }
 };
 
 struct Err : std::runtime_error {

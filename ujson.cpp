@@ -515,11 +515,10 @@ Arr Obj::get_arr(const char* name) const
     return get_member(name).as_arr();
 }
 
-Opt<Arr> Obj::get_arr_opt(const char* name) const
+Arr Obj::get_arr_opt(const char* name) const
 {
-    auto v = get_member(name, false);
-    if (!v) return Opt<Arr>(nullptr);
-    return v.as_arr();
+    if (auto v = get_member_opt(name)) return v.as_arr();
+    return Arr(nullptr);
 }
 
 Obj Obj::get_obj(const char* name) const
@@ -527,11 +526,10 @@ Obj Obj::get_obj(const char* name) const
     return get_member(name).as_obj();
 }
 
-Opt<Obj> Obj::get_obj_opt(const char* name) const
+Obj Obj::get_obj_opt(const char* name) const
 {
-    auto v = get_member(name, false);
-    if (!v) return Opt<Obj>(nullptr);
-    return v.as_obj();
+    if (auto v = get_member_opt(name)) return v.as_obj();
+    return Obj(nullptr);
 }
 
 class Parser
