@@ -1184,8 +1184,6 @@ void Json::free_root() noexcept
         delete m_root;
         m_root = nullptr;
     }
-    delete m_root_view;
-    m_root_view = nullptr;
 }
 
 void Json::free_buf() noexcept
@@ -1194,7 +1192,7 @@ void Json::free_buf() noexcept
     m_buf = nullptr;
 }
 
-const Val& Json::parse(const char* str, size_t len, uint32_t options)
+const Val Json::parse(const char* str, size_t len, uint32_t options)
 {
     clear();
     if (0 == len) {
@@ -1205,16 +1203,12 @@ const Val& Json::parse(const char* str, size_t len, uint32_t options)
     return parse_in_place(m_buf, len, options);
 }
 
-const Val& Json::parse_in_place(char* str, size_t len, uint32_t options)
+const Val Json::parse_in_place(char* str, size_t len, uint32_t options)
 {
     free_root();
     Parser p(str, len, options);
     m_root = p.parse();
-
-    // TODO!!!: Why we need m_root_view?
-    //          Can we just return Val by value in parse() and parse_in_place()?
-    m_root_view = new Val(m_root);
-    return *m_root_view;
+    return Val(m_root);
 }
 
 }; // namespace ujson
