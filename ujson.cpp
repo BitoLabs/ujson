@@ -273,7 +273,9 @@ static void do_reject_unknown_members(const ValImpl* v)
 
 void Val::reject_unknown_members() const
 {
-    do_reject_unknown_members(m_impl); // REVIEW!!! make it null-safe. Perhaps use Val instead of ValImpl. Or better make it Arr method.
+    if (m_impl) {
+        do_reject_unknown_members(m_impl);
+    }
 }
 
 static void do_ignore_members(const ValImpl* v)
@@ -290,7 +292,9 @@ static void do_ignore_members(const ValImpl* v)
 
 void Val::ignore_members() const noexcept
 {
-    do_ignore_members(m_impl); // REVIEW!!! make it null-safe. Perhaps use Val instead of ValImpl. Or better make it Arr method.
+    if (m_impl) {
+        do_ignore_members(m_impl);
+    }
 }
 
 bool Bool::get() const noexcept

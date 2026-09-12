@@ -3,6 +3,14 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
+2.0.0 (IN PROGRESS)
+===================
+
+### Changes (TBD!!!)
+
+* Val objects are returned by value.
+* get_type() returns vtNone.
+
 1.3.2 (2026-08-31)
 ==================
 
