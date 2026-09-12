@@ -222,8 +222,7 @@ struct ErrValue : Err // errors that occur when value validation fails (after it
     int32_t     val_idx;
     ValType     val_type;
 
-    // TODO!!! Decide if we need Val& or just Val. Same in other cases.
-    explicit ErrValue(const char* msg, const Val& v) noexcept;
+    explicit ErrValue(const char* msg, Val v) noexcept;
     std::string get_err_str() const override;
 };
 
@@ -231,7 +230,7 @@ struct ErrBadType : ErrValue
 {
     ValType expected_type;
 
-    explicit ErrBadType(const Val& v, ValType expected) noexcept;
+    explicit ErrBadType(Val v, ValType expected) noexcept;
     std::string get_err_str() const override;
 };
 
@@ -240,7 +239,7 @@ struct ErrBadIntRange : ErrValue
     int64_t lo;
     int64_t hi;
 
-    explicit ErrBadIntRange(const Val& v, int64_t lo, int64_t hi) noexcept;
+    explicit ErrBadIntRange(Val v, int64_t lo, int64_t hi) noexcept;
     std::string get_err_str() const override;
 };
 
@@ -249,18 +248,18 @@ struct ErrBadF64Range : ErrValue
     double lo;
     double hi;
 
-    explicit ErrBadF64Range(const Val& v, double lo, double hi) noexcept;
+    explicit ErrBadF64Range(Val v, double lo, double hi) noexcept;
     std::string get_err_str() const override;
 };
 
 struct ErrMemberNotFound : ErrValue
 {
-    explicit ErrMemberNotFound(const Obj& v, const char* name) noexcept;
+    explicit ErrMemberNotFound(Obj v, const char* name) noexcept;
 };
 
 struct ErrUnknownMember : ErrValue
 {
-    explicit ErrUnknownMember(const Val& v) noexcept;
+    explicit ErrUnknownMember(Val v) noexcept;
 };
 
 struct ErrBadArrLen : ErrValue
@@ -268,7 +267,7 @@ struct ErrBadArrLen : ErrValue
     size_t lo;
     size_t hi;
 
-    explicit ErrBadArrLen(const Val& v, size_t lo, size_t hi) noexcept;
+    explicit ErrBadArrLen(Val v, size_t lo, size_t hi) noexcept;
     std::string get_err_str() const override;
 };
 
@@ -278,7 +277,7 @@ struct ErrBadEnum : ErrValue
     std::vector<std::string> set;
 
     explicit ErrBadEnum(
-        const Val& v,
+        Val v,
         const char* bad_str,
         const char* const set[],
         size_t set_len) noexcept;

@@ -1038,7 +1038,7 @@ std::string Err::get_err_str() const
     return str;
 }
 
-ErrValue::ErrValue(const char* msg, const Val& v) noexcept
+ErrValue::ErrValue(const char* msg, Val v) noexcept
     : Err(msg, v.get_line()),
       val_name(v.get_name()),
       val_idx(v.get_idx()),
@@ -1058,7 +1058,7 @@ std::string ErrValue::get_err_str() const
     return str;
 }
 
-ErrBadType::ErrBadType(const Val& v, ValType expected) noexcept
+ErrBadType::ErrBadType(Val v, ValType expected) noexcept
     : ErrValue("bad type", v),
     expected_type(expected)
 {
@@ -1076,7 +1076,7 @@ std::string ErrBadType::get_err_str() const
     return str;
 }
 
-ErrBadIntRange::ErrBadIntRange(const Val& v, int64_t _lo, int64_t _hi) noexcept
+ErrBadIntRange::ErrBadIntRange(Val v, int64_t _lo, int64_t _hi) noexcept
     : ErrValue("bad integer range", v),
       lo(_lo),
       hi(_hi)
@@ -1092,7 +1092,7 @@ std::string ErrBadIntRange::get_err_str() const
     return str;
 }
 
-ErrBadF64Range::ErrBadF64Range(const Val& v, double _lo, double _hi) noexcept
+ErrBadF64Range::ErrBadF64Range(Val v, double _lo, double _hi) noexcept
     : ErrValue("bad float range", v),
       lo(_lo),
       hi(_hi)
@@ -1108,7 +1108,7 @@ std::string ErrBadF64Range::get_err_str() const
     return str;
 }
 
-ErrMemberNotFound::ErrMemberNotFound(const Obj& v, const char* name) noexcept
+ErrMemberNotFound::ErrMemberNotFound(Obj v, const char* name) noexcept
     : ErrValue("member not found", v)
 {
     val_name = name;
@@ -1116,12 +1116,12 @@ ErrMemberNotFound::ErrMemberNotFound(const Obj& v, const char* name) noexcept
     val_type = vtNone;
 }
 
-ErrUnknownMember::ErrUnknownMember(const Val& v) noexcept
+ErrUnknownMember::ErrUnknownMember(Val v) noexcept
     : ErrValue("unknown member", v)
 {
 }
 
-ErrBadArrLen::ErrBadArrLen(const Val& v, size_t _lo, size_t _hi) noexcept
+ErrBadArrLen::ErrBadArrLen(Val v, size_t _lo, size_t _hi) noexcept
     : ErrValue("bad array length", v),
     lo(_lo),
     hi(_hi)
@@ -1138,7 +1138,7 @@ std::string ErrBadArrLen::get_err_str() const
 }
 
 ErrBadEnum::ErrBadEnum(
-    const Val& v,
+    Val v,
     const char* bad_str,
     const char* const set[],
     size_t set_len
