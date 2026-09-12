@@ -209,7 +209,7 @@ ValType Val::get_type() const noexcept
 
 int32_t Val::get_idx() const noexcept
 {
-    return m_impl->m_idx;
+    return m_impl ? m_impl->m_idx : -1;
 }
 
 const char* Val::get_name() const noexcept

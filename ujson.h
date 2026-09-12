@@ -85,7 +85,7 @@ private:
     void free_root() noexcept;
     void free_buf() noexcept;
 private:
-    ValImpl* m_root = nullptr;      // owns the parsed tree // REVIEW!!! comment
+    ValImpl* m_root = nullptr;
     char*    m_buf  = nullptr;
 };
 
@@ -96,8 +96,8 @@ public:
     explicit operator bool() const noexcept { return has_value(); }
     bool has_value() const noexcept { return nullptr != m_impl; }
 
-    ValType get_type() const noexcept; // REVIEW!!! return vtNone if m_impl is null
-    int32_t get_idx() const noexcept; // -1 if not an array element // REVIEW!!! return -1 if m_impl is null
+    ValType get_type() const noexcept;
+    int32_t get_idx() const noexcept; // -1 if not an array element
     const char* get_name() const noexcept; // REVIEW!!! return "" if m_impl is null
     int32_t get_line() const; // REVIEW!!! return 0 if m_impl is null
     bool is_num() const noexcept;
