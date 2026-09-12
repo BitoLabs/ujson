@@ -252,7 +252,7 @@ Obj Val::as_obj() const
     return val_cast<Obj, vtObj>();
 }
 
-int32_t Val::get_line() const
+int32_t Val::get_line() const noexcept
 {
     return m_impl? m_impl->m_line_no : 0;
 }
@@ -374,7 +374,9 @@ int32_t Str::get_enum_idx(const char* const str_set[], size_t len) const
 
 size_t Arr::get_len() const noexcept
 {
-    return ArrImpl::from(m_impl).get_len();
+    return m_impl ?
+        ArrImpl::from(m_impl).get_len()
+        : 0;
 }
 
 Arr Arr::require_len(size_t lo, size_t hi) const
@@ -388,6 +390,9 @@ Arr Arr::require_len(size_t lo, size_t hi) const
 
 Val Arr::get_element(size_t idx) const
 {
+    if (!m_impl) {
+        throw std::out_of_range("Arr::get_element: index out of range");
+    }
     const ValImpl& v = ArrImpl::from(m_impl).get_element(idx);
     v.mark_as_used();
     return Val(&v);

@@ -98,7 +98,7 @@ public:
     ValType get_type() const noexcept;
     int32_t get_idx() const noexcept; // -1 if not an array element
     const char* get_name() const noexcept;
-    int32_t get_line() const;
+    int32_t get_line() const noexcept;
     bool is_num() const noexcept;
     Bool as_bool() const;
     Int as_int() const;
