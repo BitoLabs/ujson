@@ -440,8 +440,9 @@ Obj Arr::get_obj(size_t idx) const
 
 int32_t Obj::get_member_idx(const char* name, bool required) const
 {
-    auto& self = ObjImpl::from(m_impl);
-    int32_t idx = self.find(name);
+    int32_t idx = m_impl ?
+        ObjImpl::from(m_impl).find(name)
+        : -1;
     if (required && idx < 0) {
         throw ErrMemberNotFound(*this, name);
     }
@@ -450,7 +451,7 @@ int32_t Obj::get_member_idx(const char* name, bool required) const
 
 const char* Obj::get_member_name(size_t idx) const
 {
-    return ObjImpl::from(m_impl).get_element(idx).m_name;
+    return get_element(idx).get_name();
 }
 
 Val Obj::get_member(const char* name, bool required) const
