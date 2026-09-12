@@ -187,7 +187,7 @@ public:
     static constexpr ValType type() { return vtObj; }
     int32_t get_member_idx(const char* name, bool required=true) const; // -1 if not found
     const char* get_member_name(size_t idx) const;
-    Opt<Val> get_member(const char* name, bool required=true) const;
+    Val get_member(const char* name, bool required=true) const;
     bool get_bool(const char* name, const bool* def = nullptr) const;
     bool get_bool(const char* name, bool def) const { return get_bool(name, &def); }
     int32_t get_i32(const char* name, int32_t lo = 1, int32_t hi = 0, const int32_t* def = nullptr) const; // if lo > hi, skip range check

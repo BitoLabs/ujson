@@ -448,11 +448,11 @@ const char* Obj::get_member_name(size_t idx) const
     return ObjImpl::from(m_impl).get_element(idx).m_name;
 }
 
-Opt<Val> Obj::get_member(const char* name, bool required) const
+Val Obj::get_member(const char* name, bool required) const
 {
     const int32_t idx = get_member_idx(name, required);
     if (idx < 0) {
-        return Opt<Val>(nullptr);
+        return Val(nullptr);
     }
     return get_element(static_cast<size_t>(idx));
 }
@@ -460,37 +460,37 @@ Opt<Val> Obj::get_member(const char* name, bool required) const
 bool Obj::get_bool(const char* name, const bool* def) const
 {
     auto v = get_member(name, nullptr == def);
-    return v ? v->as_bool().get() : *def;
+    return v ? v.as_bool().get() : *def;
 }
 
 int32_t Obj::get_i32(const char* name, int32_t lo, int32_t hi, const int32_t* def) const
 {
     auto v = get_member(name, nullptr == def);
-    return v ? v->as_int().get_i32(lo, hi) : *def;
+    return v ? v.as_int().get_i32(lo, hi) : *def;
 }
 
 uint32_t Obj::get_u32(const char* name, uint32_t lo, uint32_t hi, const uint32_t* def) const
 {
     auto v = get_member(name, nullptr == def);
-    return v ? v->as_int().get_u32(lo, hi) : *def;
+    return v ? v.as_int().get_u32(lo, hi) : *def;
 }
 
 int64_t Obj::get_i64(const char* name, int64_t lo, int64_t hi, const int64_t* def) const
 {
     auto v = get_member(name, nullptr == def);
-    return v ? v->as_int().get(lo, hi) : *def;
+    return v ? v.as_int().get(lo, hi) : *def;
 }
 
 double Obj::get_f64(const char* name, double lo, double hi, const double* def) const
 {
     auto v = get_member(name, nullptr == def);
-    return v ? v->as_f64().get(lo, hi) : *def;
+    return v ? v.as_f64().get(lo, hi) : *def;
 }
 
 const char* Obj::get_str(const char* name, const char* def) const
 {
     auto v = get_member(name, nullptr == def);
-    return v ? v->as_str().get() : def;
+    return v ? v.as_str().get() : def;
 }
 
 int32_t Obj::get_str_enum_idx(
@@ -501,31 +501,31 @@ int32_t Obj::get_str_enum_idx(
 {
     auto v = get_member(name, required);
     if (!v) return -1;
-    return v->as_str().get_enum_idx(str_set, len);
+    return v.as_str().get_enum_idx(str_set, len);
 }
 
 Arr Obj::get_arr(const char* name) const
 {
-    return get_member(name)->as_arr();
+    return get_member(name).as_arr();
 }
 
 Opt<Arr> Obj::get_arr_opt(const char* name) const
 {
     auto v = get_member(name, false);
     if (!v) return Opt<Arr>(nullptr);
-    return v->as_arr();
+    return v.as_arr();
 }
 
 Obj Obj::get_obj(const char* name) const
 {
-    return get_member(name)->as_obj();
+    return get_member(name).as_obj();
 }
 
 Opt<Obj> Obj::get_obj_opt(const char* name) const
 {
     auto v = get_member(name, false);
     if (!v) return Opt<Obj>(nullptr);
-    return v->as_obj();
+    return v.as_obj();
 }
 
 class Parser

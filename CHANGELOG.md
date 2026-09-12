@@ -10,6 +10,10 @@ This project follows [Semantic Versioning](http://semver.org/).
 
 * Val objects are returned by value.
 * get_type() returns vtNone.
+* get_member() returns a Val instead of Val*.
+* has_value() added.
+* Val::operator bool() added.
+* Val methods are null-safe.
 
 1.3.2 (2026-08-31)
 ==================
