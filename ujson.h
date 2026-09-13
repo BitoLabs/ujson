@@ -53,10 +53,19 @@ class Json
 public:
     Json() noexcept = default;
     Json(const Json&) = delete;
-    Json(Json&&) = delete;
+    Json(Json&& other) noexcept
+    {
+        std::swap(m_root, other.m_root);
+        std::swap(m_buf, other.m_buf);
+    }
     ~Json() noexcept { clear(); }
     Json& operator = (const Json&) = delete;
-    Json& operator = (Json&&) = delete;
+    Json& operator=(Json&& other) noexcept
+    {
+        std::swap(m_root, other.m_root);
+        std::swap(m_buf, other.m_buf);
+        return *this;
+    }
     Val parse(const char* str, size_t len = 0, uint32_t options = optDefault); // str must be zero-terminated only if len=0. len does not include terminal zero
     Val parse_in_place(char* str, size_t len = 0, uint32_t options = optDefault); // str must be zero-terminated and allocated until Json instance is destroyed. len does not include terminal zero
     void clear() noexcept;

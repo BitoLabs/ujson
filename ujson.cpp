@@ -801,7 +801,7 @@ private:
                 char c = *p;
                 if (c < '0' || c > '9') break;
                 int d = c - '0';
-                if (n < a || n == a && d > b) {
+                if (n < a || (n == a && d > b)) {
                     throw ErrSyntax("invalid number syntax: integer doesn't fit in 64 bits", m_line_count);
                 }
                 n = n * 10 - d;

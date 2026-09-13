@@ -46,6 +46,7 @@ modification to work with the new API.
   much safer and avoids completely accidents of accessing invalid
   values.
 * Add get_member_opt().
+* Allow move semantics in Json class so that it can be used in containers.
 
 1.3.2 (2026-08-31)
 ==================
