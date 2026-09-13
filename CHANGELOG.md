@@ -7,7 +7,7 @@ This project follows [Semantic Versioning](http://semver.org/).
 ===================
 
 This version underwent essential API changes and is no longer
-compatible with 1.x. Though the calling code requires only simple
+compatible with 1.x, though the calling code requires only simple
 modification to work with the new API. 
 
 ### Breaking Changes
@@ -29,12 +29,13 @@ modification to work with the new API.
   In the new API this is indicated by bool operator returning
   false (same as new has_value method). Also in this case
   get_type() returns vtNone. The application code in such cases
-  looks very similar they it was before. If 'auto' was used,
-  it doesn't need changes:
+  looks very similar to how it was before. However, accessing
+  the value now requires a `.` operator instead of `->`:
 
   ~~~~~~~~cpp
-  if (auto obj = parent.get_obj_opt()) {
-      // access obj ...
+  if (auto obj = parent.get_obj_opt(name)) {
+      int32_t field = obj.get_i32("field"); // was obj->get_i32(...)
+      ...
   }
   ~~~~~~~~
 
