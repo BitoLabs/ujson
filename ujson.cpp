@@ -111,11 +111,21 @@ public:
     int32_t           m_idx = -1;       //  4 bytes
 };
 
-class ArrImpl : public ValImpl // REVIEW!!! merge with Node?
+// ArrImpl and ObjImpl - we prefer to have these classes separated from ValImpl
+// rather than merging everything in a single ValImpl class, in spite the fact
+// that we actually create only instances of ValImpl. This separation makes
+// it more clear what type we are expecting and is self-documenting.
+// 
+// For example: every recursive-descent parsing function — parse_val, add_val,
+// parse_val_obj, etc. takes its "parent" parameter typed as ArrImpl* parent,
+// not ValImpl* parent. This is a compile-time reminder for maintainers that
+// the "parent" must be a container, not a scalar.
+//
+class ArrImpl : public ValImpl
 {
 public:
 
-    static const ArrImpl& from(const ValImpl* impl) // REVIEW!!!
+    static const ArrImpl& from(const ValImpl* impl)
     {
         return *static_cast<const ArrImpl*>(impl);
     }
@@ -144,11 +154,11 @@ public:
 
 };
 
-class ObjImpl : public ArrImpl // REVIEW!!! merge with Node?
+class ObjImpl : public ArrImpl
 {
 public:
 
-    static const ObjImpl& from(const ValImpl* impl) // REVIEW!!!
+    static const ObjImpl& from(const ValImpl* impl)
     {
         return *static_cast<const ObjImpl*>(impl);
     }
