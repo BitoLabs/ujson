@@ -6,14 +6,44 @@ This project follows [Semantic Versioning](http://semver.org/).
 2.0.0 (IN PROGRESS)
 ===================
 
-### Changes (TBD!!!)
+This version underwent essential API changes and is no longer
+compatible with 1.x. Though the calling code requires only simple
+modification to work with the new API. 
 
-* Val objects are returned by value.
-* get_type() returns vtNone.
-* get_member() returns a Val instead of Val*.
-* has_value() added.
-* Val::operator bool() added.
-* Val methods are null-safe.
+### Breaking Changes
+
+* Val objects (and objects derived from Val, like Bool, Int, etc.)
+  are returned by value (was by reference). Now a Val object includes
+  a pointer to internal data. It acts as lightweight view, similar
+  to std::string_view. The calling code should now look like this
+  (no reference):
+
+  ~~~~~~~~cpp
+  ujson::Obj root = json.parse(in).as_obj(); // new API
+  const ujson::Obj& root = json.parse(in).as_obj(); // old API
+  ~~~~~~~~
+
+* get_member(), get_arr_opt(), get_obj_opt() now return a Val, Arr
+  and Obj respectively by value (was pointer). If the value
+  is absent, in the old API this was indicated by nullptr.
+  In the new API this is indicated by bool operator returning
+  false (same as new has_value method). Also in this case
+  get_type() returns vtNone. The application code in such cases
+  looks very similar they it was before. If 'auto' was used,
+  it doesn't need changes:
+
+  ~~~~~~~~cpp
+  if (auto obj = parent.get_obj_opt()) {
+      // access obj ...
+  }
+  ~~~~~~~~
+
+### New features
+
+* Add Val::has_value() and Val::operator bool(). Comparing to the old
+  API returning a nullptr to indicate an absent value, the new API is
+  much safer and avoids completely accidents of accessing invalid
+  values.
 * Add get_member_opt().
 
 1.3.2 (2026-08-31)
