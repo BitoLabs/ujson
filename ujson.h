@@ -27,7 +27,7 @@ class F64;
 class Str;
 class Arr;
 class Obj;
-class ValImpl; // internal class
+class Node; // internal class
 
 enum Options : uint32_t // Parse options
 {
@@ -64,16 +64,16 @@ private:
     void free_root() noexcept;
     void free_buf() noexcept;
 private:
-    ValImpl* m_root = nullptr;
-    char*    m_buf  = nullptr;
+    Node* m_root = nullptr;
+    char* m_buf  = nullptr;
 };
 
 class Val
 {
 public:
-    explicit Val(const ValImpl* impl) noexcept : m_impl(impl) {}
+    explicit Val(const Node* node) noexcept : m_node(node) {}
     explicit operator bool() const noexcept { return has_value(); }
-    bool has_value() const noexcept { return nullptr != m_impl; }
+    bool has_value() const noexcept { return nullptr != m_node; }
     ValType get_type() const noexcept;
     int32_t get_idx() const noexcept; // -1 if not an array element
     const char* get_name() const noexcept;
@@ -91,7 +91,7 @@ protected:
     template<class T, uint32_t E> // REVIEW!!! can it be only in .cpp? Make it one-line
     T val_cast() const;
 
-    const ValImpl* m_impl = nullptr; // REVIEW!!! rename to const Node* m_node;
+    const Node* m_node = nullptr;
 };
 
 class Bool: public Val

@@ -23,14 +23,14 @@ namespace ujson {
 
 const uint32_t vtUsedBit = 1U << 31; // Bit in m_type indicating that the value was accessed by the application.
 
-class ArrImpl;
-class ObjImpl;
+class ArrNode;
+class ObjNode;
 
-class ValImpl
+class Node
 {
 public:
     struct List {
-        std::vector<ValImpl> values;
+        std::vector<Node> values;
         virtual ~List() = default;
     };
     struct Dict : public List {
@@ -50,46 +50,46 @@ public:
         m_type = vtNull;
     }
 
-    ValImpl& init_bool(bool b)
+    Node& init_bool(bool b)
     {
         m_type = vtBool;
         m_data.b = b;
         return *this;
     }
 
-    ValImpl& init_int(int64_t n)
+    Node& init_int(int64_t n)
     {
         m_type = vtInt;
         m_data.i64 = n;
         return *this;
     }
 
-    ValImpl& init_f64(double n)
+    Node& init_f64(double n)
     {
         m_type = vtF64;
         m_data.f64 = n;
         return *this;
     }
 
-    ValImpl& init_str(const char* str)
+    Node& init_str(const char* str)
     {
         m_type = vtStr;
         m_data.str = str;
         return *this;
     }
 
-    ArrImpl& init_arr()
+    ArrNode& init_arr()
     {
         m_type = vtArr;
         m_data.list = new List;
-        return *reinterpret_cast<ArrImpl*>(this);
+        return *reinterpret_cast<ArrNode*>(this);
     }
 
-    ObjImpl& init_obj()
+    ObjNode& init_obj()
     {
         m_type = vtObj;
         m_data.list = new Dict;
-        return *reinterpret_cast<ObjImpl*>(this);
+        return *reinterpret_cast<ObjNode*>(this);
     }
 
     void mark_as_used() const noexcept
@@ -111,23 +111,23 @@ public:
     int32_t           m_idx = -1;       //  4 bytes
 };
 
-// ArrImpl and ObjImpl - we prefer to have these classes separated from ValImpl
-// rather than merging everything in a single ValImpl class, in spite the fact
-// that we actually create only instances of ValImpl. This separation makes
+// ArrNode and ObjNode - we prefer to have these classes separated from Node
+// rather than merging everything in a single Node class, despite the fact
+// that we actually create only instances of Node. This separation makes
 // it more clear what type we are expecting and is self-documenting.
 // 
-// For example: every recursive-descent parsing function — parse_val, add_val,
-// parse_val_obj, etc. takes its "parent" parameter typed as ArrImpl* parent,
-// not ValImpl* parent. This is a compile-time reminder for maintainers that
+// For example: every recursive-descent parsing function - parse_val, add_val,
+// parse_val_obj, etc. takes its "parent" parameter typed as ArrNode* parent,
+// not Node* parent. This is a compile-time reminder for maintainers that
 // the "parent" must be a container, not a scalar.
 //
-class ArrImpl : public ValImpl
+class ArrNode : public Node
 {
 public:
 
-    static const ArrImpl& from(const ValImpl* impl)
+    static const ArrNode& from(const Node* node)
     {
-        return *static_cast<const ArrImpl*>(impl);
+        return *static_cast<const ArrNode*>(node);
     }
 
     size_t get_len() const
@@ -135,32 +135,32 @@ public:
         return m_data.list->values.size();
     }
 
-    const ValImpl& get_element(size_t idx) const
+    const Node& get_element(size_t idx) const
     {
         return m_data.list->values.at(idx);
     }
 
-    ValImpl& get_element(size_t idx)
+    Node& get_element(size_t idx)
     {
         return m_data.list->values.at(idx);
     }
 
-    ValImpl& add_element()
+    Node& add_element()
     {
-        ValImpl& v = m_data.list->values.emplace_back();
+        Node& v = m_data.list->values.emplace_back();
         v.m_idx = static_cast<int32_t>(get_len()) - 1;
         return v;
     }
 
 };
 
-class ObjImpl : public ArrImpl
+class ObjNode : public ArrNode
 {
 public:
 
-    static const ObjImpl& from(const ValImpl* impl)
+    static const ObjNode& from(const Node* node)
     {
-        return *static_cast<const ObjImpl*>(impl);
+        return *static_cast<const ObjNode*>(node);
     }
 
     int32_t find(const char* name) const
@@ -170,7 +170,7 @@ public:
         return (iter != m.end()) ? iter->second : -1;
     }
 
-    bool add_member(const char* name, size_t idx, ValImpl& v)
+    bool add_member(const char* name, size_t idx, Node& v)
     {
         const bool added = map().try_emplace(name, static_cast<int32_t>(idx)).second;
         if (added) {
@@ -209,22 +209,22 @@ T Val::val_cast() const
     if ((get_type() & E) == 0) {
         throw ErrBadType(*this, T::type());
     }
-    return T(m_impl);
+    return T(m_node);
 }
 
 ValType Val::get_type() const noexcept
 {
-    return m_impl ? static_cast<ValType>(m_impl->m_type & ~vtUsedBit) : vtNone;
+    return m_node ? static_cast<ValType>(m_node->m_type & ~vtUsedBit) : vtNone;
 }
 
 int32_t Val::get_idx() const noexcept
 {
-    return m_impl ? m_impl->m_idx : -1;
+    return m_node ? m_node->m_idx : -1;
 }
 
 const char* Val::get_name() const noexcept
 {
-    return m_impl ? m_impl->m_name : "";
+    return m_node ? m_node->m_name : "";
 }
 
 bool Val::is_num() const noexcept
@@ -264,13 +264,13 @@ Obj Val::as_obj() const
 
 int32_t Val::get_line() const noexcept
 {
-    return m_impl? m_impl->m_line_no : 0;
+    return m_node? m_node->m_line_no : 0;
 }
 
-static void do_reject_unknown_members(const ValImpl* v)
+static void do_reject_unknown_members(const Node* v)
 {
     if (v->m_type & (vtArr | vtObj)) {
-        const ArrImpl& arr = *static_cast<const ArrImpl*>(v);
+        const ArrNode& arr = *static_cast<const ArrNode*>(v);
         for (size_t i = 0; i < arr.get_len(); i++) {
             v = &arr.get_element(i);
             if (0 == (v->m_type & vtUsedBit) && (arr.m_type & vtObj)) {
@@ -283,15 +283,15 @@ static void do_reject_unknown_members(const ValImpl* v)
 
 void Val::reject_unknown_members() const
 {
-    if (m_impl) {
-        do_reject_unknown_members(m_impl);
+    if (m_node) {
+        do_reject_unknown_members(m_node);
     }
 }
 
-static void do_ignore_members(const ValImpl* v)
+static void do_ignore_members(const Node* v)
 {
     if (v->m_type & (vtArr | vtObj)) {
-        const ArrImpl& arr = *static_cast<const ArrImpl*>(v);
+        const ArrNode& arr = *static_cast<const ArrNode*>(v);
         for (size_t i = 0; i < arr.get_len(); i++) {
             v = &arr.get_element(i);
             v->mark_as_used();
@@ -302,19 +302,19 @@ static void do_ignore_members(const ValImpl* v)
 
 void Val::ignore_members() const noexcept
 {
-    if (m_impl) {
-        do_ignore_members(m_impl);
+    if (m_node) {
+        do_ignore_members(m_node);
     }
 }
 
 bool Bool::get() const noexcept
 {
-    return m_impl->m_data.b;
+    return m_node->m_data.b;
 }
 
 int64_t Int::get() const noexcept
 {
-    return m_impl->m_data.i64;
+    return m_node->m_data.i64;
 }
 
 int64_t Int::get(int64_t lo, int64_t hi) const
@@ -356,7 +356,7 @@ uint32_t Int::get_u32(uint32_t lo, uint32_t hi) const
 
 double F64::get() const noexcept
 {
-    return (vtInt & m_impl->m_type) ? m_impl->m_data.i64 : m_impl->m_data.f64;
+    return (vtInt & m_node->m_type) ? m_node->m_data.i64 : m_node->m_data.f64;
 }
 
 double F64::get(double lo, double hi) const
@@ -370,7 +370,7 @@ double F64::get(double lo, double hi) const
 
 const char* Str::get() const noexcept
 {
-    return m_impl->m_data.str;
+    return m_node->m_data.str;
 }
 
 int32_t Str::get_enum_idx(const char* const str_set[], size_t len) const
@@ -384,8 +384,8 @@ int32_t Str::get_enum_idx(const char* const str_set[], size_t len) const
 
 size_t Arr::get_len() const noexcept
 {
-    return m_impl ?
-        ArrImpl::from(m_impl).get_len()
+    return m_node ?
+        ArrNode::from(m_node).get_len()
         : 0;
 }
 
@@ -400,10 +400,10 @@ Arr Arr::require_len(size_t lo, size_t hi) const
 
 Val Arr::get_element(size_t idx) const
 {
-    if (!m_impl) {
+    if (!m_node) {
         throw std::out_of_range("Arr::get_element: index out of range");
     }
-    const ValImpl& v = ArrImpl::from(m_impl).get_element(idx);
+    const Node& v = ArrNode::from(m_node).get_element(idx);
     v.mark_as_used();
     return Val(&v);
 }
@@ -450,8 +450,8 @@ Obj Arr::get_obj(size_t idx) const
 
 int32_t Obj::get_member_idx(const char* name, bool required) const
 {
-    int32_t idx = m_impl ?
-        ObjImpl::from(m_impl).find(name)
+    int32_t idx = m_node ?
+        ObjNode::from(m_node).find(name)
         : -1;
     if (required && idx < 0) {
         throw ErrMemberNotFound(*this, name);
@@ -570,7 +570,7 @@ public:
         }
     }
 
-    ValImpl* parse()
+    Node* parse()
     {
         std::ignore = parse_val(nullptr);
         skip_white_space();
@@ -579,23 +579,23 @@ public:
         }
         // The ownership of root value is passed to the caller.
         // By setting m_root to null, we avoid freeing it in ~Parser().
-        ValImpl* root = m_root;
+        Node* root = m_root;
         m_root = nullptr;
         return root;
     }
 
 private:
-    ValImpl* m_root = nullptr;
+    Node* m_root = nullptr;
 
     
-    ValImpl* parse_val(ArrImpl* parent)
+    Node* parse_val(ArrNode* parent)
     {
         const uint32_t max_nested_level = 512u;
         if (++m_nested_level > max_nested_level) {
             throw ErrSyntax("too many nested values", m_line_count);
         }
         skip_white_space();
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         while (true) {
             if ((v = parse_val_null(parent)) != nullptr) break;
             if ((v = parse_val_bool(parent)) != nullptr) break;
@@ -614,11 +614,11 @@ private:
         throw ErrSyntax("invalid string syntax: bad utf-16 codepoint", m_line_count);
     }
 
-    ValImpl* add_val(ArrImpl* parent)
+    Node* add_val(ArrNode* parent)
     {
-        ValImpl* v = (parent)?
+        Node* v = (parent)?
             &parent->add_element() :
-            new ValImpl;
+            new Node;
         if (!parent) m_root = v;
         v->m_line_no = m_line_count;
         return v;
@@ -644,9 +644,9 @@ private:
         return name;
     }
 
-    ObjImpl* parse_val_obj(ArrImpl* parent)
+    ObjNode* parse_val_obj(ArrNode* parent)
     {
-        ObjImpl* obj = nullptr;
+        ObjNode* obj = nullptr;
         if (!skip_text("{")) return obj;
         obj = &add_val(parent)->init_obj();
         skip_white_space();
@@ -655,7 +655,7 @@ private:
             const char* name = parse_member_name();
             skip_white_space();
             size_t idx = obj->get_len();
-            ValImpl* v = parse_val(obj);
+            Node* v = parse_val(obj);
             if (!obj->add_member(name, idx, *v)) {
                 if (m_options & optUniqueMembers) {
                     throw ErrSyntax("invalid object syntax: duplicate member name", m_line_count);
@@ -672,9 +672,9 @@ private:
         return obj;
     }
 
-    ArrImpl* parse_val_arr(ArrImpl* parent)
+    ArrNode* parse_val_arr(ArrNode* parent)
     {
-        ArrImpl* arr = nullptr;
+        ArrNode* arr = nullptr;
         if (!skip_text("[")) return arr;
         arr = &add_val(parent)->init_arr();
         skip_white_space();
@@ -692,18 +692,18 @@ private:
         return arr;
     }
 
-    ValImpl* parse_val_null(ArrImpl* parent)
+    Node* parse_val_null(ArrNode* parent)
     {
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         if (skip_text("null")) {
             v = add_val(parent);
         }
         return v;
     }
 
-    ValImpl* parse_val_bool(ArrImpl* parent)
+    Node* parse_val_bool(ArrNode* parent)
     {
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         bool b = false;
         if (skip_text("false")) {
             b = false;
@@ -719,9 +719,9 @@ private:
         return v;
     }
 
-    ValImpl* parse_val_num(ArrImpl* parent)
+    Node* parse_val_num(ArrNode* parent)
     {
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         bool negative = false;
         bool is_float = false;
         char* p = m_next;
@@ -829,9 +829,9 @@ private:
         return v;
     }
 
-    ValImpl* parse_val_str(ArrImpl* parent)
+    Node* parse_val_str(ArrNode* parent)
     {
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         const char* str = parse_str();
         if (nullptr != str) {
             v = add_val(parent);
