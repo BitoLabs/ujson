@@ -172,10 +172,8 @@ We can read values via following classes derived from `Val` class:
 * `Bool`: use its `get()` method to obtain a value of a `bool` type.
 
 A `null` value can be determined by verifying if `Val::get_type()` returns `vtNull`.
-
-Some functions (like get_member_opt, get_arr_opt, get_obj_opt) can
-return a 'None' value when they can't find a member with the requested
-name. In this case `Val::get_type()` returns `vtNone`.
+This is different from a missing/absent value (`vtNone`), covered in
+[Optional and default values].
 
 Note that `Val` and its derived classes are lightweight views, valid only as
 long as the `Json` instance is allocated. See more in [value life time] section.
@@ -333,6 +331,17 @@ Color color = obj.get_str_enum("foo",
 
 <a name="a_optional"></a>
 #### Optional and default values
+
+For scalar members (`Bool`, `Int`, `F64`, `Str`), supplying a default value
+suppresses `ErrMemberNotFound` for that member, as shown below.
+
+A member that's missing entirely is different from one whose value is JSON
+`null`: `ujson` represents "missing" as an absent `Val` — one with no
+underlying data at all. `Val::get_type()` returns `vtNone` for it, and it
+tests as `false` in a boolean context (via `has_value()` or
+`explicit operator bool()`). The `get_member_opt`, `get_arr_opt` and
+`get_obj_opt` methods are the ones that can return such a value, instead of
+throwing, when the requested name isn't found.
 
 ~~~~~~~~cpp
 ujson::Obj obj = ...
