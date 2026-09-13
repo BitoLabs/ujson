@@ -2,7 +2,7 @@ ujson
 =====
 
 *ujson* is a tiny C++ library used to read a [JSON](https://www.json.org/) format.
-Where `u` stands for µ (micro). Original repository where the code is maintained is
+Where `u` stands for Âµ (micro). Original repository where the code is maintained is
 here: https://github.com/bitolabs/ujson.git
 
 Here is a brief example:
@@ -11,12 +11,12 @@ Here is a brief example:
 #include "ujson.h"
 #include <iostream>
 
-void main() {
+int main() {
     ujson::Json json;
-    const ujson::Obj& obj = json.parse(
+    ujson::Obj obj = json.parse(
         "{"
         "  \"foo\" : 42,"
-        "  \"bar\" : \"baz\","
+        "  \"bar\" : \"baz\""
         "}").as_obj();
 
     int32_t     foo = obj.get_i32("foo");
@@ -24,6 +24,7 @@ void main() {
 
     std::cout << foo << '\n';
     std::cout << bar << '\n';
+    return 0;
 }
 ~~~~~~~~
 
@@ -104,11 +105,12 @@ char* str_read_file(const char* fname)
     return str;
 }
 
-void main()
+int main()
 {
     char* in = str_read_file("my.json");
     ...
     free(in);
+    return 0;
 }
 ~~~~~~~~
 
@@ -116,18 +118,19 @@ void main()
 
 Next we have to create a variable of `Json` type.
 This variable must be allocated until we finished with
-getting all the JSON values. We must not use any references
-to values after we deallocate the `Json` variable.
+getting all the JSON values. We must not use any values
+obtained from `ujson` after we deallocate the `Json` variable.
 
 Then we call `Json::parse()` or `Json::parse_in_place()`, see [in-place parsing].
 Note, in case of `Json::parse()` we can optionally provide
 the buffer length, so that it doesn't have to be zero-terminated.
 
-Either function returns a `const ujson::Val&` which is the root value.
-The `Val` class represents a JSON value of any type.
+Either function returns a `Val` by value, which is the root value.
+`Val` is a small, cheap-to-copy view into the parsed data (it holds
+a single pointer internally); it represents a JSON value of any type.
 
 In majority of cases the a JSON's root value is an object.
-So we can cast it to `Obj` class by calling `Val::as_obj()`
+So we can obtain it as an `Obj` view by calling `Val::as_obj()`
 method. Should this value be of another type, `as_obj()`
 will raise `ErrBadType` exception. Check other `Val::as_*()`
 methods for different types.
@@ -138,13 +141,14 @@ by the application immediately after the call. If we use
 until we are done fetching JSON values.
 
 ~~~~~~~~cpp
-void main()
+int main()
 {
     char* in = str_read_file("my.json");
     ujson::Json json;
-    const ujson::Obj& root = json.parse(in).as_obj();
+    ujson::Obj root = json.parse(in).as_obj();
     ...
     free(in);
+    return 0;
 }
 ~~~~~~~~
 
@@ -154,12 +158,12 @@ We can read values via following classes derived from `Val` class:
 
 * `Obj`: contains named values of any type. Use the get methods:
     - `get_xxx(name)`: where xxx is a value type such as `i32`, etc.
-    - `get_member(name)`: provides a reference to a `Val` that can be cast
-      to a particular type.
+    - `get_member(name)`: returns a `Val` view that can be converted
+      to a particular type via its `as_xxx()` methods.
 * `Arr`: contains an array of values of any type. Use get methods:
     - `get_xxx(idx)`: where xxx is a value type such as `i32`, etc.
-    - `get_element(idx)`: provides a reference to a `Val` that can be cast
-      to a particular type.
+    - `get_element(idx)`: returns a `Val` view that can be converted
+      to a particular type via its `as_xxx()` methods.
 * `Str`: use its `get()` method to get the pointer to a C string.
 * `F64`: use its `get()` methods to get a floating point value of a `double` type.
   Can be used on any numbers, integers or floating point.
@@ -169,8 +173,12 @@ We can read values via following classes derived from `Val` class:
 
 A `null` value can be determined by verifying if `Val::get_type()` returns `vtNull`.
 
-Note that value references are valid until the `Json` instance is allocated. See
-more in [value life time] section.
+Some functions (like get_member_opt, get_arr_opt, get_obj_opt) can
+return a 'None' value when they can't find a member with the requested
+name. In this case `Val::get_type()` returns `vtNone`.
+
+Note that `Val` and its derived classes are lightweight views, valid only as
+long as the `Json` instance is allocated. See more in [value life time] section.
 
 Below is an example of fetching JSON values:
 
@@ -186,11 +194,11 @@ Below is an example of fetching JSON values:
 ~~~~~~~~~
 
 ~~~~~~~~cpp
-void main()
+int main()
 {
     char* in = str_read_file("my.json");
     ujson::Json json;
-    const ujson::Obj& root = json.parse(in).as_obj();
+    ujson::Obj root = json.parse(in).as_obj();
 
     std::string name = root.get_str ("name");
     int32_t width    = root.get_i32 ("width",  100, 4000); // restrict to range (100,4000)
@@ -198,26 +206,33 @@ void main()
     bool on_top      = root.get_bool("on_top", false); // default: false
     double opacity   = root.get_f64 ("opacity", 0.0, 1.0, 1.0); // range (0,1), default: 1
 
-    const ujson::Arr& menu = root.get_arr("menu");
+    ujson::Arr menu = root.get_arr("menu");
     for (size_t i = 0; i < menu.get_len(); i++) {
         std::string item = menu.get_str(i);
         ...
     }
     ...
     free(in);
+    return 0;
 }
 ~~~~~~~~
 
 <a name="a_lifetime"></a>
 ### Value life time
 
-The `ujson` API provides references/pointers to objects such as:
+`Val` and its derived classes (`Bool`, `Int`, `F64`, `Str`, `Arr`, `Obj`) are
+small, cheap-to-copy *views* into data owned by the `Json` instance that
+produced them â€” similar in spirit to `std::string_view`. They don't own or
+extend the lifetime of anything; they are provided for example by:
 
-* `Val` derived classes. Provided for example by:
-  - `Json::parse()` and `Json::parse_in_place()`
-  - `Arr::get_element()`
-  - `Obj::get_member()`
-  - etc.
+* `Json::parse()` and `Json::parse_in_place()`
+* `Arr::get_element()`
+* `Obj::get_member()` and `Obj::get_member_opt()`
+* etc.
+
+The library also provides plain C pointers/strings whose validity follows
+the same rules:
+
 * C strings of `Str` values. Provided for example by:
   - `Str::get()`
   - `Arr::get_str()`
@@ -226,7 +241,7 @@ The `ujson` API provides references/pointers to objects such as:
   - `Val::get_name()`
   - `Obj::get_member_name()`
 
-These references are valid as long as the `Json` instance is allocated,
+All of the above remain valid as long as the `Json` instance is allocated,
 and become invalid when any of the below occurs:
 
 * `Json` instance is deallocated.
@@ -234,9 +249,9 @@ and become invalid when any of the below occurs:
 * `Json::clear()` is called.
 
 If the [in-place parsing] is used, then strings and names are valid until
-the application deallocates the input buffer, even `Json` instance is no
-longer allocated. However the references to `Val` classes are bound only to
-`Json` instance.
+the application deallocates the input buffer, even if the `Json` instance is
+no longer allocated. However `Val`/`Arr`/`Obj`/etc. views are bound only to
+the `Json` instance, regardless of which parsing method was used.
 
 <a name="a_errors"></a>
 ### Error handling
@@ -310,7 +325,7 @@ Example:
 ~~~~~~~~cpp
 enum Color { red, green, blue };
 ujson::Json json;
-auto& obj = json.parse(R"({"foo": "green"})").as_obj();
+ujson::Obj obj = json.parse(R"({"foo": "green"})").as_obj();
 Color color = obj.get_str_enum("foo",
     std::array{"red", "green", "blue"},
     std::array{red, green, blue});
@@ -320,13 +335,13 @@ Color color = obj.get_str_enum("foo",
 #### Optional and default values
 
 ~~~~~~~~cpp
-const ujson::Obj& obj = ...
+ujson::Obj obj = ...
 
 // By default named members are required:
 //
 int32_t     n = obj.get_i32("n"); // will fail if "n" is absent
 std::string s = obj.get_str("s"); // will fail if "s" is absent
-const ujson::Obj& x = root.get_obj("x"); // will fail if "x" is absent
+ujson::Obj  x = obj.get_obj("x"); // will fail if "x" is absent
 
 // Handling an optional number:
 //
@@ -339,8 +354,16 @@ std::string s = obj.get_str("s", "default"); // will return "default" if "s" is 
 
 // Handling an optional object:
 //
-if (const ujson::Obj* x = root.get_obj_opt("x")) {
-    std::string child = x->get_str("child");
+if (ujson::Obj x = obj.get_obj_opt("x")) {
+    std::string child = x.get_str("child");
+}
+
+// Handling an optional value of any/unknown type: get_member_opt() never
+// throws for a missing name; check it with has_value() (or just as a
+// boolean condition), then convert to the expected type explicitly:
+//
+if (ujson::Val v = obj.get_member_opt("x")) {
+    ujson::Obj x = v.as_obj(); // throws ErrBadType if "x" isn't actually an object
 }
 ~~~~~~~~
 
@@ -356,16 +379,16 @@ as follows:
 ujson::Json json;
 
 // Limit the 'rgb' array to 3 elements, otherwise it will throw ErrBadArrLen.
-const ujson::Arr& rgb = json.parse("[0, 255, 0]").as_arr().require_len(3);
+ujson::Arr rgb = json.parse("[0, 255, 0]").as_arr().require_len(3);
 ...
 
 // Bound the 'samples' length to range (0, 16), otherwise it will throw ErrBadArrLen.
-const ujson::Arr& samples = json.parse("[0, 1, 2, 7]").as_arr().require_len(0, 16);
+ujson::Arr samples = json.parse("[0, 1, 2, 7]").as_arr().require_len(0, 16);
 ...
 
 
 // The 'unlimted' array has no length limitation.
-const ujson::Arr& unlimited = json.parse("[0, 1, 2, 4, 5]").as_arr();
+ujson::Arr unlimited = json.parse("[0, 1, 2, 4, 5]").as_arr();
 ...
 ~~~~~~~~
 
@@ -434,7 +457,7 @@ For example:
 const char str[] =
     R"(
       {
-          "foo" : "\u00B5",       // µ (MICRO SIGN) U+00B5
+          "foo" : "\u00B5",       // Âµ (MICRO SIGN) U+00B5
           "bar" : "\uD83D\uDE02", // (FACE WITH TEARS OF JOY) U+1F602
       }
     )";
