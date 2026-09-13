@@ -88,9 +88,6 @@ public:
     void reject_unknown_members() const; // throws ErrUnknownMember if any named child value was not accessed
     void ignore_members() const noexcept; // marks recursively all children as accessed
 protected:
-    template<class T, uint32_t E> // REVIEW!!! can it be only in .cpp? Make it one-line
-    T val_cast() const;
-
     const Node* m_node = nullptr;
 };
 

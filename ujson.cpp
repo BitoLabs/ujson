@@ -204,12 +204,12 @@ static void str_copy(char* dst, const char* src, size_t count)
 }
 
 template<class T, uint32_t E>
-T Val::val_cast() const
+static T val_cast(Val self, const Node* node)
 {
-    if ((get_type() & E) == 0) {
-        throw ErrBadType(*this, T::type());
+    if ((self.get_type() & E) == 0) {
+        throw ErrBadType(self, T::type());
     }
-    return T(m_node);
+    return T(node);
 }
 
 ValType Val::get_type() const noexcept
@@ -234,32 +234,32 @@ bool Val::is_num() const noexcept
 
 Bool Val::as_bool() const
 {
-    return val_cast<Bool, vtBool>();
+    return val_cast<Bool, vtBool>(*this, m_node);
 }
 
 Int Val::as_int() const
 {
-    return val_cast<Int, vtInt>();
+    return val_cast<Int, vtInt>(*this, m_node);
 }
 
 F64 Val::as_f64() const
 {
-    return val_cast<F64, vtInt | vtF64>();
+    return val_cast<F64, vtInt | vtF64>(*this, m_node);
 }
 
 Str Val::as_str() const
 {
-    return val_cast<Str, vtStr>();
+    return val_cast<Str, vtStr>(*this, m_node);
 }
 
 Arr Val::as_arr() const
 {
-    return val_cast<Arr, vtArr>();
+    return val_cast<Arr, vtArr>(*this, m_node);
 }
 
 Obj Val::as_obj() const
 {
-    return val_cast<Obj, vtObj>();
+    return val_cast<Obj, vtObj>(*this, m_node);
 }
 
 int32_t Val::get_line() const noexcept
@@ -586,7 +586,6 @@ public:
 
 private:
     Node* m_root = nullptr;
-
     
     Node* parse_val(ArrNode* parent)
     {
