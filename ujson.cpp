@@ -1200,7 +1200,7 @@ void Json::free_buf() noexcept
     m_buf = nullptr;
 }
 
-const Val Json::parse(const char* str, size_t len, uint32_t options)
+Val Json::parse(const char* str, size_t len, uint32_t options)
 {
     clear();
     if (0 == len) {
@@ -1211,7 +1211,7 @@ const Val Json::parse(const char* str, size_t len, uint32_t options)
     return parse_in_place(m_buf, len, options);
 }
 
-const Val Json::parse_in_place(char* str, size_t len, uint32_t options)
+Val Json::parse_in_place(char* str, size_t len, uint32_t options)
 {
     free_root();
     Parser p(str, len, options);
