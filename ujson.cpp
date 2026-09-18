@@ -23,14 +23,14 @@ namespace ujson {
 
 const uint32_t vtUsedBit = 1U << 31; // Bit in m_type indicating that the value was accessed by the application.
 
-class ArrImpl;
-class ObjImpl;
+class ArrNode;
+class ObjNode;
 
-class ValImpl: public Val
+class Node
 {
 public:
     struct List {
-        std::vector<ValImpl> values;
+        std::vector<Node> values;
         virtual ~List() = default;
     };
     struct Dict : public List {
@@ -50,61 +50,51 @@ public:
         m_type = vtNull;
     }
 
-    ValImpl& init_bool(bool b)
+    Node& init_bool(bool b)
     {
         m_type = vtBool;
         m_data.b = b;
         return *this;
     }
 
-    ValImpl& init_int(int64_t n)
+    Node& init_int(int64_t n)
     {
         m_type = vtInt;
         m_data.i64 = n;
         return *this;
     }
 
-    ValImpl& init_f64(double n)
+    Node& init_f64(double n)
     {
         m_type = vtF64;
         m_data.f64 = n;
         return *this;
     }
 
-    ValImpl& init_str(const char* str)
+    Node& init_str(const char* str)
     {
         m_type = vtStr;
         m_data.str = str;
         return *this;
     }
 
-    ArrImpl& init_arr()
+    ArrNode& init_arr()
     {
         m_type = vtArr;
         m_data.list = new List;
-        return *reinterpret_cast<ArrImpl*>(this);
+        return *reinterpret_cast<ArrNode*>(this);
     }
 
-    ObjImpl& init_obj()
+    ObjNode& init_obj()
     {
         m_type = vtObj;
         m_data.list = new Dict;
-        return *reinterpret_cast<ObjImpl*>(this);
+        return *reinterpret_cast<ObjNode*>(this);
     }
 
     void mark_as_used() const noexcept
     {
         m_type |= vtUsedBit;
-    }
-
-    static const ValImpl& from(const Val* v)
-    {
-        return *static_cast<const ValImpl*>(v);
-    }
-
-    static ValImpl& from(Val* v)
-    {
-        return *static_cast<ValImpl*>(v);
     }
 
 public:
@@ -121,13 +111,30 @@ public:
     int32_t           m_idx = -1;       //  4 bytes
 };
 
-class ArrImpl : public ValImpl
+// ArrNode and ObjNode - we prefer to have these classes separated from Node
+// rather than merging everything in a single Node class, despite the fact
+// that we actually create only instances of Node. This separation makes
+// it more clear what type we are expecting and is self-documenting.
+// 
+// For example: every recursive-descent parsing function - parse_val, add_val,
+// parse_val_obj, etc. takes its "parent" parameter typed as ArrNode* parent,
+// not Node* parent. This is a compile-time reminder for maintainers that
+// the "parent" must be a container, not a scalar.
+// 
+// On the other hand this way we perform "type-punning", i.e. we never
+// actually create ArrNode and ObjNode instances but cast to these types.
+// Because neither class adds data members or virtual functions, this is
+// layout-compatible and works reliably on every mainstream compiler (and is
+// a known, accepted pattern in performance-oriented C++), but it's technically
+// outside what the standard guarantees.
+//
+class ArrNode : public Node
 {
 public:
 
-    static const ArrImpl& from(const Arr* arr)
+    static const ArrNode& from(const Node* node)
     {
-        return *reinterpret_cast<const ArrImpl*>(arr);
+        return *static_cast<const ArrNode*>(node); // type-punning, see explanations in comment "ArrNode and ObjNode - ..."
     }
 
     size_t get_len() const
@@ -135,37 +142,32 @@ public:
         return m_data.list->values.size();
     }
 
-    const ValImpl& get_element(size_t idx) const
+    const Node& get_element(size_t idx) const
     {
         return m_data.list->values.at(idx);
     }
 
-    ValImpl& get_element(size_t idx)
+    Node& get_element(size_t idx)
     {
         return m_data.list->values.at(idx);
     }
 
-    ValImpl& add_element()
+    Node& add_element()
     {
-        ValImpl& v = m_data.list->values.emplace_back();
+        Node& v = m_data.list->values.emplace_back();
         v.m_idx = static_cast<int32_t>(get_len()) - 1;
         return v;
     }
 
 };
 
-class ObjImpl : public ArrImpl
+class ObjNode : public ArrNode
 {
 public:
 
-    static const ObjImpl& from(const Obj* obj)
+    static const ObjNode& from(const Node* node)
     {
-        return *reinterpret_cast<const ObjImpl*>(obj);
-    }
-
-    const Obj& as_obj() const
-    {
-        return *static_cast<const Obj*>(static_cast<const Val*>(this));
+        return *static_cast<const ObjNode*>(node); // type-punning, see explanations in comment "ArrNode and ObjNode - ..."
     }
 
     int32_t find(const char* name) const
@@ -175,7 +177,7 @@ public:
         return (iter != m.end()) ? iter->second : -1;
     }
 
-    bool add_member(const char* name, size_t idx, ValImpl& v)
+    bool add_member(const char* name, size_t idx, Node& v)
     {
         const bool added = map().try_emplace(name, static_cast<int32_t>(idx)).second;
         if (added) {
@@ -209,27 +211,27 @@ static void str_copy(char* dst, const char* src, size_t count)
 }
 
 template<class T, uint32_t E>
-const T& val_cast(const Val* v)
+static T val_cast(Val self, const Node* node)
 {
-    if ((v->get_type() & E) == 0) {
-        throw ErrBadType(*v, T::type());
+    if ((self.get_type() & E) == 0) {
+        throw ErrBadType(self, T::type());
     }
-    return *static_cast<const T*>(v);
+    return T(node);
 }
 
 ValType Val::get_type() const noexcept
 {
-    return static_cast<ValType>(ValImpl::from(this).m_type & ~vtUsedBit);
+    return m_node ? static_cast<ValType>(m_node->m_type & ~vtUsedBit) : vtNone;
 }
 
 int32_t Val::get_idx() const noexcept
 {
-    return ValImpl::from(this).m_idx;
+    return m_node ? m_node->m_idx : -1;
 }
 
 const char* Val::get_name() const noexcept
 {
-    return ValImpl::from(this).m_name;
+    return m_node ? m_node->m_name : "";
 }
 
 bool Val::is_num() const noexcept
@@ -237,49 +239,49 @@ bool Val::is_num() const noexcept
     return (get_type() & (vtInt | vtF64)) != 0;
 }
 
-const Bool& Val::as_bool() const
+Bool Val::as_bool() const
 {
-    return val_cast<Bool, vtBool>(this);
+    return val_cast<Bool, vtBool>(*this, m_node);
 }
 
-const Int& Val::as_int() const
+Int Val::as_int() const
 {
-    return val_cast<Int, vtInt>(this);
+    return val_cast<Int, vtInt>(*this, m_node);
 }
 
-const F64& Val::as_f64() const
+F64 Val::as_f64() const
 {
-    return val_cast<F64, vtInt | vtF64>(this);
+    return val_cast<F64, vtInt | vtF64>(*this, m_node);
 }
 
-const Str& Val::as_str() const
+Str Val::as_str() const
 {
-    return val_cast<Str, vtStr>(this);
+    return val_cast<Str, vtStr>(*this, m_node);
 }
 
-const Arr& Val::as_arr() const
+Arr Val::as_arr() const
 {
-    return val_cast<Arr, vtArr>(this);
+    return val_cast<Arr, vtArr>(*this, m_node);
 }
 
-const Obj& Val::as_obj() const
+Obj Val::as_obj() const
 {
-    return val_cast<Obj, vtObj>(this);
+    return val_cast<Obj, vtObj>(*this, m_node);
 }
 
-int32_t Val::get_line() const
+int32_t Val::get_line() const noexcept
 {
-    return ValImpl::from(this).m_line_no;
+    return m_node? m_node->m_line_no : 0;
 }
 
-static void do_reject_unknown_members(const ValImpl* v)
+static void do_reject_unknown_members(const Node* v)
 {
-    if (v->get_type() & (vtArr | vtObj)) {
-        const ArrImpl& arr = *static_cast<const ArrImpl*>(v);
+    if (v->m_type & (vtArr | vtObj)) {
+        const ArrNode& arr = *static_cast<const ArrNode*>(v);
         for (size_t i = 0; i < arr.get_len(); i++) {
             v = &arr.get_element(i);
-            if (0 == (v->m_type & vtUsedBit) && (arr.get_type() & vtObj)) {
-                throw ErrUnknownMember(*v);
+            if (0 == (v->m_type & vtUsedBit) && (arr.m_type & vtObj)) {
+                throw ErrUnknownMember(Val(v));
             }
             do_reject_unknown_members(v);
         }
@@ -288,13 +290,15 @@ static void do_reject_unknown_members(const ValImpl* v)
 
 void Val::reject_unknown_members() const
 {
-    do_reject_unknown_members(&ValImpl::from(this));
+    if (m_node) {
+        do_reject_unknown_members(m_node);
+    }
 }
 
-static void do_ignore_members(const ValImpl* v)
+static void do_ignore_members(const Node* v)
 {
-    if (v->get_type() & (vtArr | vtObj)) {
-        const ArrImpl& arr = *static_cast<const ArrImpl*>(v);
+    if (v->m_type & (vtArr | vtObj)) {
+        const ArrNode& arr = *static_cast<const ArrNode*>(v);
         for (size_t i = 0; i < arr.get_len(); i++) {
             v = &arr.get_element(i);
             v->mark_as_used();
@@ -305,17 +309,19 @@ static void do_ignore_members(const ValImpl* v)
 
 void Val::ignore_members() const noexcept
 {
-    do_ignore_members(&ValImpl::from(this));
+    if (m_node) {
+        do_ignore_members(m_node);
+    }
 }
 
 bool Bool::get() const noexcept
 {
-    return ValImpl::from(this).m_data.b;
+    return m_node->m_data.b;
 }
 
 int64_t Int::get() const noexcept
 {
-    return ValImpl::from(this).m_data.i64;
+    return m_node->m_data.i64;
 }
 
 int64_t Int::get(int64_t lo, int64_t hi) const
@@ -357,8 +363,7 @@ uint32_t Int::get_u32(uint32_t lo, uint32_t hi) const
 
 double F64::get() const noexcept
 {
-    auto& impl = ValImpl::from(this);
-    return (vtInt & impl.get_type()) ? impl.m_data.i64 : impl.m_data.f64;
+    return (vtInt & m_node->m_type) ? m_node->m_data.i64 : m_node->m_data.f64;
 }
 
 double F64::get(double lo, double hi) const
@@ -372,7 +377,7 @@ double F64::get(double lo, double hi) const
 
 const char* Str::get() const noexcept
 {
-    return ValImpl::from(this).m_data.str;
+    return m_node->m_data.str;
 }
 
 int32_t Str::get_enum_idx(const char* const str_set[], size_t len) const
@@ -386,10 +391,12 @@ int32_t Str::get_enum_idx(const char* const str_set[], size_t len) const
 
 size_t Arr::get_len() const noexcept
 {
-    return ArrImpl::from(this).get_len();
+    return m_node ?
+        ArrNode::from(m_node).get_len()
+        : 0;
 }
 
-const Arr& Arr::require_len(size_t lo, size_t hi) const
+Arr Arr::require_len(size_t lo, size_t hi) const
 {
     const size_t len = get_len();
     if (len < lo || len > hi) {
@@ -398,11 +405,14 @@ const Arr& Arr::require_len(size_t lo, size_t hi) const
     return *this;
 }
 
-const Val& Arr::get_element(size_t idx) const
+Val Arr::get_element(size_t idx) const
 {
-    const ValImpl& v = ArrImpl::from(this).get_element(idx);
+    if (!m_node) {
+        throw std::out_of_range("Arr::get_element: index out of range");
+    }
+    const Node& v = ArrNode::from(m_node).get_element(idx);
     v.mark_as_used();
-    return v;
+    return Val(&v);
 }
 
 bool Arr::get_bool(size_t idx) const
@@ -435,20 +445,21 @@ const char* Arr::get_str(size_t idx) const
     return get_element(idx).as_str().get();
 }
 
-const Arr& Arr::get_arr(size_t idx) const
+Arr Arr::get_arr(size_t idx) const
 {
     return get_element(idx).as_arr();
 }
 
-const Obj& Arr::get_obj(size_t idx) const
+Obj Arr::get_obj(size_t idx) const
 {
     return get_element(idx).as_obj();
 }
 
 int32_t Obj::get_member_idx(const char* name, bool required) const
 {
-    auto& self = ObjImpl::from(this);
-    int32_t idx = self.find(name);
+    int32_t idx = m_node ?
+        ObjNode::from(m_node).find(name)
+        : -1;
     if (required && idx < 0) {
         throw ErrMemberNotFound(*this, name);
     }
@@ -457,49 +468,52 @@ int32_t Obj::get_member_idx(const char* name, bool required) const
 
 const char* Obj::get_member_name(size_t idx) const
 {
-    return ObjImpl::from(this).get_element(idx).get_name();
+    return get_element(idx).get_name();
 }
 
-const Val* Obj::get_member(const char* name, bool required) const
+Val Obj::get_member(const char* name, bool required) const
 {
     const int32_t idx = get_member_idx(name, required);
-    return (idx >= 0) ? &get_element(static_cast<size_t>(idx)) : nullptr;
+    if (idx < 0) {
+        return Val(nullptr);
+    }
+    return get_element(static_cast<size_t>(idx));
 }
 
 bool Obj::get_bool(const char* name, const bool* def) const
 {
-    auto* v = get_member(name, nullptr == def);
-    return v ? v->as_bool().get() : *def;
+    auto v = get_member(name, nullptr == def);
+    return v ? v.as_bool().get() : *def;
 }
 
 int32_t Obj::get_i32(const char* name, int32_t lo, int32_t hi, const int32_t* def) const
 {
-    auto* v = get_member(name, nullptr == def);
-    return v ? v->as_int().get_i32(lo, hi) : *def;
+    auto v = get_member(name, nullptr == def);
+    return v ? v.as_int().get_i32(lo, hi) : *def;
 }
 
 uint32_t Obj::get_u32(const char* name, uint32_t lo, uint32_t hi, const uint32_t* def) const
 {
-    auto* v = get_member(name, nullptr == def);
-    return v ? v->as_int().get_u32(lo, hi) : *def;
+    auto v = get_member(name, nullptr == def);
+    return v ? v.as_int().get_u32(lo, hi) : *def;
 }
 
 int64_t Obj::get_i64(const char* name, int64_t lo, int64_t hi, const int64_t* def) const
 {
-    auto* v = get_member(name, nullptr == def);
-    return v ? v->as_int().get(lo, hi) : *def;
+    auto v = get_member(name, nullptr == def);
+    return v ? v.as_int().get(lo, hi) : *def;
 }
 
 double Obj::get_f64(const char* name, double lo, double hi, const double* def) const
 {
-    auto* v = get_member(name, nullptr == def);
-    return v ? v->as_f64().get(lo, hi) : *def;
+    auto v = get_member(name, nullptr == def);
+    return v ? v.as_f64().get(lo, hi) : *def;
 }
 
 const char* Obj::get_str(const char* name, const char* def) const
 {
-    auto* v = get_member(name, nullptr == def);
-    return v ? v->as_str().get() : def;
+    auto v = get_member(name, nullptr == def);
+    return v ? v.as_str().get() : def;
 }
 
 int32_t Obj::get_str_enum_idx(
@@ -508,31 +522,31 @@ int32_t Obj::get_str_enum_idx(
     size_t len,
     bool required) const
 {
-    const Val* v = get_member(name, required);
-    if (nullptr == v) return -1;
-    return v->as_str().get_enum_idx(str_set, len);
+    auto v = get_member(name, required);
+    if (!v) return -1;
+    return v.as_str().get_enum_idx(str_set, len);
 }
 
-const Arr& Obj::get_arr(const char* name) const
+Arr Obj::get_arr(const char* name) const
 {
-    return get_member(name)->as_arr();
+    return get_member(name).as_arr();
 }
 
-const Arr* Obj::get_arr_opt(const char* name) const
+Arr Obj::get_arr_opt(const char* name) const
 {
-    const Val* v = get_member(name, false);
-    return v ? &v->as_arr() : nullptr;
+    if (auto v = get_member_opt(name)) return v.as_arr();
+    return Arr(nullptr);
 }
 
-const Obj& Obj::get_obj(const char* name) const
+Obj Obj::get_obj(const char* name) const
 {
-    return get_member(name)->as_obj();
+    return get_member(name).as_obj();
 }
 
-const Obj* Obj::get_obj_opt(const char* name) const
+Obj Obj::get_obj_opt(const char* name) const
 {
-    const Val* v = get_member(name, false);
-    return v ? &v->as_obj() : nullptr;
+    if (auto v = get_member_opt(name)) return v.as_obj();
+    return Obj(nullptr);
 }
 
 class Parser
@@ -563,7 +577,7 @@ public:
         }
     }
 
-    ValImpl* parse()
+    Node* parse()
     {
         std::ignore = parse_val(nullptr);
         skip_white_space();
@@ -572,23 +586,22 @@ public:
         }
         // The ownership of root value is passed to the caller.
         // By setting m_root to null, we avoid freeing it in ~Parser().
-        ValImpl* root = m_root;
+        Node* root = m_root;
         m_root = nullptr;
         return root;
     }
 
 private:
-    ValImpl* m_root = nullptr;
-
+    Node* m_root = nullptr;
     
-    ValImpl* parse_val(ArrImpl* parent)
+    Node* parse_val(ArrNode* parent)
     {
         const uint32_t max_nested_level = 512u;
         if (++m_nested_level > max_nested_level) {
             throw ErrSyntax("too many nested values", m_line_count);
         }
         skip_white_space();
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         while (true) {
             if ((v = parse_val_null(parent)) != nullptr) break;
             if ((v = parse_val_bool(parent)) != nullptr) break;
@@ -607,11 +620,11 @@ private:
         throw ErrSyntax("invalid string syntax: bad utf-16 codepoint", m_line_count);
     }
 
-    ValImpl* add_val(ArrImpl* parent)
+    Node* add_val(ArrNode* parent)
     {
-        ValImpl* v = (parent)?
+        Node* v = (parent)?
             &parent->add_element() :
-            new ValImpl;
+            new Node;
         if (!parent) m_root = v;
         v->m_line_no = m_line_count;
         return v;
@@ -637,9 +650,9 @@ private:
         return name;
     }
 
-    ObjImpl* parse_val_obj(ArrImpl* parent)
+    ObjNode* parse_val_obj(ArrNode* parent)
     {
-        ObjImpl* obj = nullptr;
+        ObjNode* obj = nullptr;
         if (!skip_text("{")) return obj;
         obj = &add_val(parent)->init_obj();
         skip_white_space();
@@ -648,7 +661,7 @@ private:
             const char* name = parse_member_name();
             skip_white_space();
             size_t idx = obj->get_len();
-            ValImpl* v = parse_val(obj);
+            Node* v = parse_val(obj);
             if (!obj->add_member(name, idx, *v)) {
                 if (m_options & optUniqueMembers) {
                     throw ErrSyntax("invalid object syntax: duplicate member name", m_line_count);
@@ -665,9 +678,9 @@ private:
         return obj;
     }
 
-    ArrImpl* parse_val_arr(ArrImpl* parent)
+    ArrNode* parse_val_arr(ArrNode* parent)
     {
-        ArrImpl* arr = nullptr;
+        ArrNode* arr = nullptr;
         if (!skip_text("[")) return arr;
         arr = &add_val(parent)->init_arr();
         skip_white_space();
@@ -685,18 +698,18 @@ private:
         return arr;
     }
 
-    ValImpl* parse_val_null(ArrImpl* parent)
+    Node* parse_val_null(ArrNode* parent)
     {
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         if (skip_text("null")) {
             v = add_val(parent);
         }
         return v;
     }
 
-    ValImpl* parse_val_bool(ArrImpl* parent)
+    Node* parse_val_bool(ArrNode* parent)
     {
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         bool b = false;
         if (skip_text("false")) {
             b = false;
@@ -712,9 +725,9 @@ private:
         return v;
     }
 
-    ValImpl* parse_val_num(ArrImpl* parent)
+    Node* parse_val_num(ArrNode* parent)
     {
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         bool negative = false;
         bool is_float = false;
         char* p = m_next;
@@ -747,12 +760,12 @@ private:
             while (*p >= '0' && *p <= '9') p += 1;
         }
         bool isHex = (m_options & optHex)
-            && ('0' == *num_start && p)
+            && ('0' == *num_start)
             && (p - num_start == 1)
             && (*p == 'x' || *p == 'X');
         if (isHex) {
             p += 1;
-            int64_t n = 0;
+            uint64_t n = 0;
             while (true) {
                 char c = *p;
                 if (c >= '0' && c <= '9') {
@@ -774,9 +787,12 @@ private:
                 n += c;
                 p += 1;
             }
-            if (negative) n = -n;
+            // Note that we consider here that
+            // -0x80..00 (-INT64_MIN) --> 0x80..00 (INT64_MIN)
+            // and deliberately don't raise an error that it doesn't fit in 64.
+            if (negative) n = ~n + 1; // unsigned negation (n = -n): always well-defined, wraps mod 2^64
             v = add_val(parent);
-            v->init_int(n);
+            v->init_int(static_cast<int64_t>(n));
         }
         else if (!is_float) {
             // If integer exceeds -9223372036854775808 ... 9223372036854775807
@@ -795,7 +811,7 @@ private:
                 char c = *p;
                 if (c < '0' || c > '9') break;
                 int d = c - '0';
-                if (n < a || n == a && d > b) {
+                if (n < a || (n == a && d > b)) {
                     throw ErrSyntax("invalid number syntax: integer doesn't fit in 64 bits", m_line_count);
                 }
                 n = n * 10 - d;
@@ -808,7 +824,7 @@ private:
         else { // It is a float
             char* end = m_next;
             errno = 0;
-            double n = std::strtod(m_next, &end);
+            double n = std::strtod(m_next, &end); // TODO: strtod() is locale-dependent (can use , instead of .); consider std::from_chars
             if (ERANGE == errno) {
                 throw ErrSyntax("invalid number syntax: float is too huge", m_line_count);
             }
@@ -822,9 +838,9 @@ private:
         return v;
     }
 
-    ValImpl* parse_val_str(ArrImpl* parent)
+    Node* parse_val_str(ArrNode* parent)
     {
-        ValImpl* v = nullptr;
+        Node* v = nullptr;
         const char* str = parse_str();
         if (nullptr != str) {
             v = add_val(parent);
@@ -1041,7 +1057,7 @@ std::string Err::get_err_str() const
     return str;
 }
 
-ErrValue::ErrValue(const char* msg, const Val& v) noexcept
+ErrValue::ErrValue(const char* msg, Val v) noexcept
     : Err(msg, v.get_line()),
       val_name(v.get_name()),
       val_idx(v.get_idx()),
@@ -1061,7 +1077,7 @@ std::string ErrValue::get_err_str() const
     return str;
 }
 
-ErrBadType::ErrBadType(const Val& v, ValType expected) noexcept
+ErrBadType::ErrBadType(Val v, ValType expected) noexcept
     : ErrValue("bad type", v),
     expected_type(expected)
 {
@@ -1079,7 +1095,7 @@ std::string ErrBadType::get_err_str() const
     return str;
 }
 
-ErrBadIntRange::ErrBadIntRange(const Val& v, int64_t _lo, int64_t _hi) noexcept
+ErrBadIntRange::ErrBadIntRange(Val v, int64_t _lo, int64_t _hi) noexcept
     : ErrValue("bad integer range", v),
       lo(_lo),
       hi(_hi)
@@ -1095,7 +1111,7 @@ std::string ErrBadIntRange::get_err_str() const
     return str;
 }
 
-ErrBadF64Range::ErrBadF64Range(const Val& v, double _lo, double _hi) noexcept
+ErrBadF64Range::ErrBadF64Range(Val v, double _lo, double _hi) noexcept
     : ErrValue("bad float range", v),
       lo(_lo),
       hi(_hi)
@@ -1111,7 +1127,7 @@ std::string ErrBadF64Range::get_err_str() const
     return str;
 }
 
-ErrMemberNotFound::ErrMemberNotFound(const Obj& v, const char* name) noexcept
+ErrMemberNotFound::ErrMemberNotFound(Obj v, const char* name) noexcept
     : ErrValue("member not found", v)
 {
     val_name = name;
@@ -1119,12 +1135,12 @@ ErrMemberNotFound::ErrMemberNotFound(const Obj& v, const char* name) noexcept
     val_type = vtNone;
 }
 
-ErrUnknownMember::ErrUnknownMember(const Val& v) noexcept
+ErrUnknownMember::ErrUnknownMember(Val v) noexcept
     : ErrValue("unknown member", v)
 {
 }
 
-ErrBadArrLen::ErrBadArrLen(const Val& v, size_t _lo, size_t _hi) noexcept
+ErrBadArrLen::ErrBadArrLen(Val v, size_t _lo, size_t _hi) noexcept
     : ErrValue("bad array length", v),
     lo(_lo),
     hi(_hi)
@@ -1141,7 +1157,7 @@ std::string ErrBadArrLen::get_err_str() const
 }
 
 ErrBadEnum::ErrBadEnum(
-    const Val& v,
+    Val v,
     const char* bad_str,
     const char* const set[],
     size_t set_len
@@ -1182,9 +1198,8 @@ void Json::clear() noexcept
 void Json::free_root() noexcept
 {
     if (nullptr != m_root) {
-        auto* v = &ValImpl::from(m_root);
-        v->clear();
-        delete v;
+        m_root->clear();
+        delete m_root;
         m_root = nullptr;
     }
 }
@@ -1195,7 +1210,7 @@ void Json::free_buf() noexcept
     m_buf = nullptr;
 }
 
-const Val& Json::parse(const char* str, size_t len, uint32_t options)
+Val Json::parse(const char* str, size_t len, uint32_t options) &
 {
     clear();
     if (0 == len) {
@@ -1206,12 +1221,12 @@ const Val& Json::parse(const char* str, size_t len, uint32_t options)
     return parse_in_place(m_buf, len, options);
 }
 
-const Val& Json::parse_in_place(char* str, size_t len, uint32_t options)
+Val Json::parse_in_place(char* str, size_t len, uint32_t options) &
 {
     free_root();
     Parser p(str, len, options);
     m_root = p.parse();
-    return *m_root;
+    return Val(m_root);
 }
 
 }; // namespace ujson

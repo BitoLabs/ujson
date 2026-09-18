@@ -3,6 +3,68 @@ Change log
 
 This project follows [Semantic Versioning](http://semver.org/).
 
+2.0.0 (2026-09-18)
+===================
+
+This version underwent essential API changes and is no longer
+compatible with 1.x, though the calling code requires only simple
+modification to work with the new API. 
+
+### Breaking Changes
+
+* Val objects (and objects derived from Val, like Bool, Int, etc.)
+  are returned by value (was by reference). Now a Val object includes
+  a pointer to internal data. It acts as lightweight view, similar
+  to std::string_view. The calling code should now look like this
+  (no reference):
+
+  ~~~~~~~~cpp
+  ujson::Obj root = json.parse(in).as_obj(); // new API
+  const ujson::Obj& root = json.parse(in).as_obj(); // old API
+  ~~~~~~~~
+
+* get_member(), get_arr_opt(), get_obj_opt() now return a Val, Arr
+  and Obj respectively by value (was pointer). If the value
+  is absent, in the old API this was indicated by nullptr.
+  In the new API this is indicated by bool operator returning
+  false (same as new has_value method). Also in this case
+  get_type() returns vtNone. The application code in such cases
+  looks very similar to how it was before. However, accessing
+  the value now requires a `.` operator instead of `->`:
+
+  ~~~~~~~~cpp
+  if (auto obj = parent.get_obj_opt(name)) {
+      int32_t field = obj.get_i32("field"); // was obj->get_i32(...)
+      ...
+  }
+  ~~~~~~~~
+
+### New features
+
+* Add Val::has_value() and Val::operator bool(). Comparing to the old
+  API returning a nullptr to indicate an absent value, the new API is
+  much safer and avoids completely accidents of accessing invalid
+  values.
+* Add get_member_opt().
+* Allow move semantics in Json class so that it can be used in containers.
+* Add ref-qualifier in parse() and parse_in_place() to avoid dangling
+  references. Example:
+
+  ~~~~~~~~cpp
+  // Now it is compiler error, otherwise val will outlive temporary Json instance:
+  auto val = Json().parse(...);
+
+  // This is ok:
+  Json json;
+  auto val = json.parse(...);
+  ~~~~~~~~
+
+### Fixes
+
+* Avoid possible compiler undefined behaviour when negating hex numbers.
+  Example: {'x': -0x8000000000000000}. This now is guaranteed to
+  return 0x8000000000000000.
+
 1.3.2 (2026-08-31)
 ==================
 
