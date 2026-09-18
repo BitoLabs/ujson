@@ -491,6 +491,6 @@ Unit tests are in a separate repo: [ujson-test].
 [in-place parsing]:            #a_inplace
 [ujson.h]: ujson.h
 [ujson.cpp]: ujson.cpp
-[ujson-test]: ../../../ujson-test.git
+[ujson-test]: https://github.com/bitolabs/ujson-test.git
 [RFC8259]: https://tools.ietf.org/html/rfc8259
 [ECMA-404]: https://ecma-international.org/wp-content/uploads/ECMA-404_2nd_edition_december_2017.pdf
